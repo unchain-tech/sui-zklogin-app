@@ -14,6 +14,7 @@ import "./index.css";
 import ThemeConfig from "./theme/index.ts";
 import { resources } from "./lang/resources.ts";
 
+// ネットワーク設定を読み込み
 const { networkConfig } = createNetworkConfig({
   devnet: { url: getFullnodeUrl("devnet") },
 });
@@ -47,5 +48,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </SuiClientProvider>
       </QueryClientProvider>
     </ThemeProvider>
-  </BrowserRouter>
+  </BrowserRouter>,
 );

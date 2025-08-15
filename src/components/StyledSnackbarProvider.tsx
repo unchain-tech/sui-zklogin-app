@@ -2,6 +2,9 @@ import { styled } from "@mui/material";
 import { SnackbarProvider, SnackbarProviderProps } from "notistack";
 import { primary, error, warning, success } from "../theme/colors";
 
+/**
+ * StyledSnackbarProvider コンポーネント
+ */
 export const StyledSnackbarProvider = styled(
   SnackbarProvider,
 )<SnackbarProviderProps>(() => ({

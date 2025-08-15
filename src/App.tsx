@@ -43,11 +43,6 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "./App.css";
 import GoogleLogo from "./assets/google.svg";
 import {
-  AXIOS_ZKPROOF,
-  BUILD_ZKLOGIN_SIGNATURE,
-  GENERATE_NONCE,
-} from "./code_example";
-import {
   CLIENT_ID,
   FULLNODE_URL,
   KEY_PAIR_SESSION_STORAGE_KEY,
@@ -58,7 +53,7 @@ import {
   SUI_DEVNET_FAUCET,
   SUI_PROVER_DEV_ENDPOINT,
   USER_SALT_LOCAL_STORAGE_KEY,
-} from "./constant";
+} from "./utils/constant";
 import { base, gray } from "./theme/colors";
 
 export type PartialZkLoginSignature = Omit<
@@ -116,16 +111,16 @@ function App() {
 
   useEffect(() => {
     const privateKey = window.sessionStorage.getItem(
-      KEY_PAIR_SESSION_STORAGE_KEY
+      KEY_PAIR_SESSION_STORAGE_KEY,
     );
     if (privateKey) {
       const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(
-        fromB64(privateKey)
+        fromB64(privateKey),
       );
       setEphemeralKeyPair(ephemeralKeyPair);
     }
     const randomness = window.sessionStorage.getItem(
-      RANDOMNESS_SESSION_STORAGE_KEY
+      RANDOMNESS_SESSION_STORAGE_KEY,
     );
     if (randomness) {
       setRandomness(randomness);
@@ -181,7 +176,7 @@ function App() {
     {
       enabled: Boolean(zkLoginUserAddress),
       refetchInterval: 1500,
-    }
+    },
   );
 
   const resetState = () => {
@@ -489,7 +484,7 @@ function App() {
                   const ephemeralKeyPair = Ed25519Keypair.generate();
                   window.sessionStorage.setItem(
                     KEY_PAIR_SESSION_STORAGE_KEY,
-                    ephemeralKeyPair.export().privateKey
+                    ephemeralKeyPair.export().privateKey,
                   );
                   setEphemeralKeyPair(ephemeralKeyPair);
                 }}
@@ -502,7 +497,7 @@ function App() {
                 disabled={!ephemeralKeyPair}
                 onClick={() => {
                   window.sessionStorage.removeItem(
-                    KEY_PAIR_SESSION_STORAGE_KEY
+                    KEY_PAIR_SESSION_STORAGE_KEY,
                   );
                   setEphemeralKeyPair(undefined);
                 }}
@@ -585,7 +580,7 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                   setCurrentEpoch(epoch);
                   window.localStorage.setItem(
                     MAX_EPOCH_LOCAL_STORAGE_KEY,
-                    String(Number(epoch) + 10)
+                    String(Number(epoch) + 10),
                   );
                   setMaxEpoch(Number(epoch) + 10);
                 }}
@@ -626,7 +621,7 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                   const randomness = generateRandomness();
                   window.sessionStorage.setItem(
                     RANDOMNESS_SESSION_STORAGE_KEY,
-                    randomness
+                    randomness,
                   );
                   setRandomness(randomness);
                 }}
@@ -638,13 +633,6 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
               </Typography>
             </Stack>
             <Box>
-              <SyntaxHighlighter
-                wrapLongLines
-                language="typescript"
-                style={oneDark}
-              >
-                {GENERATE_NONCE}
-              </SyntaxHighlighter>
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Button
                   variant="contained"
@@ -661,7 +649,7 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                     const nonce = generateNonce(
                       ephemeralKeyPair.getPublicKey(),
                       maxEpoch,
-                      randomness
+                      randomness,
                     );
                     setNonce(nonce);
                   }}
@@ -824,7 +812,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                   const salt = generateRandomness();
                   window.localStorage.setItem(
                     USER_SALT_LOCAL_STORAGE_KEY,
-                    salt
+                    salt,
                   );
                   setUserSalt(salt);
                 }}
@@ -984,7 +972,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                   }
                   const extendedEphemeralPublicKey =
                     getExtendedEphemeralPublicKey(
-                      ephemeralKeyPair.getPublicKey()
+                      ephemeralKeyPair.getPublicKey(),
                     );
 
                   setExtendedEphemeralPublicKey(extendedEphemeralPublicKey);
@@ -1004,13 +992,6 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
               </Typography>
             </Box>
             <Typography>{t(`16ebd660`)}</Typography>
-            <SyntaxHighlighter
-              wrapLongLines
-              language="typescript"
-              style={oneDark}
-            >
-              {AXIOS_ZKPROOF}
-            </SyntaxHighlighter>
             <LoadingButton
               loading={fetchingZKProof}
               variant="contained"
@@ -1038,7 +1019,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                       headers: {
                         "Content-Type": "application/json",
                       },
-                    }
+                    },
                   );
                   setZkProof(zkProofResult.data as PartialZkLoginSignature);
                   enqueueSnackbar("Successfully obtain ZK Proof", {
@@ -1051,7 +1032,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                     String(error?.response?.data?.message || error),
                     {
                       variant: "error",
-                    }
+                    },
                   );
                 } finally {
                   setFetchingZKProof(false);
@@ -1085,13 +1066,6 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
             </Typography>
             <Alert severity="warning">{t("d58c9e1e")}</Alert>
             <Typography sx={{ mt: "12px" }}>{t("6591b962")}</Typography>
-            <SyntaxHighlighter
-              wrapLongLines
-              language="typescript"
-              style={oneDark}
-            >
-              {BUILD_ZKLOGIN_SIGNATURE}
-            </SyntaxHighlighter>
             <div className="card">
               <LoadingButton
                 loading={executingTxn}
@@ -1113,7 +1087,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                     const [coin] = txb.splitCoins(txb.gas, [MIST_PER_SUI * 1n]);
                     txb.transferObjects(
                       [coin],
-                      "0xfa0f8542f256e669694624aa3ee7bfbde5af54641646a3a05924cf9e329a8a36"
+                      "0xfa0f8542f256e669694624aa3ee7bfbde5af54641646a3a05924cf9e329a8a36",
                     );
                     txb.setSender(zkLoginUserAddress);
 
@@ -1129,7 +1103,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                       BigInt(userSalt),
                       "sub",
                       decodedJwt.sub,
-                      decodedJwt.aud as string
+                      decodedJwt.aud as string,
                     ).toString();
 
                     const zkLoginSignature: SerializedSignature =
@@ -1151,7 +1125,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                       `Execution successful: ${executeRes.digest}`,
                       {
                         variant: "success",
-                      }
+                      },
                     );
                     setExecuteDigest(executeRes.digest);
                   } catch (error) {
