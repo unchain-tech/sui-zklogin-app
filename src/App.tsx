@@ -353,20 +353,10 @@ function App() {
         <Stack direction="row" alignItems="center" spacing={4}>
           <Typography>
             <a
-              href="https://github.com/jovicheng/sui-zklogin-demo"
+              href="https://github.com/mashharuki/sui-zklogin-demo"
               target="_blank"
             >
               @ Github Repo
-            </a>
-          </Typography>
-          <Typography
-            sx={{
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <a href="https://github.com/jovicheng" target="_blank">
-              @ Jovi
             </a>
           </Typography>
         </Stack>
@@ -970,10 +960,14 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                   if (!ephemeralKeyPair) {
                     return;
                   }
+                  // extend
                   const extendedEphemeralPublicKey =
                     getExtendedEphemeralPublicKey(
                       ephemeralKeyPair.getPublicKey(),
                     );
+
+                  console.log("ephemeralKeyPair.getPublicKey():", ephemeralKeyPair)
+                  console.log("extendedEphemeralPublicKey:", extendedEphemeralPublicKey);
 
                   setExtendedEphemeralPublicKey(extendedEphemeralPublicKey);
                 }}
