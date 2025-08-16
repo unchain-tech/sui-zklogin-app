@@ -5,7 +5,7 @@ import { Header } from "./components/Header";
 import { ShowBalance } from "./components/ShowBalance";
 import { TransactionExecuteButton } from "./components/TransactionExecuteButton";
 import { useGlobalContext } from "./hooks/useGlobalContext";
-import { useSui } from "./hooks/useSui";
+import { useGetBalance, useSui } from "./hooks/useSui";
 import { useZKLogin } from "./hooks/useZKLogin";
 import "./style/App.css";
 
@@ -32,7 +32,7 @@ function App() {
   } = useGlobalContext();
 
   // useSui hook を使用
-  const { executeTransaction, useZkLoginAddressBalance } = useSui();
+  const { executeTransaction } = useSui();
   // useZKLogin hook を使用
   const { login } = useZKLogin();
 
@@ -42,7 +42,7 @@ function App() {
       <ShowBalance
         zkLoginUserAddress={zkLoginUserAddress}
         addressBalance={
-          useZkLoginAddressBalance(zkLoginUserAddress)!.addressBalance
+          useGetBalance(zkLoginUserAddress)!.addressBalance
         }
       />
       {zkLoginUserAddress && <FaucetLinkButton />}

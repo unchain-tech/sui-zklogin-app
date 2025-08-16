@@ -1,5 +1,4 @@
 import { useSuiClientQuery } from "@mysten/dapp-kit";
-import { SuiClient } from "@mysten/sui.js/client";
 import type { SerializedSignature } from "@mysten/sui.js/cryptography";
 import type { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
@@ -8,11 +7,8 @@ import { genAddressSeed, getZkLoginSignature } from "@mysten/zklogin";
 import type { JwtPayload } from "jwt-decode";
 import { enqueueSnackbar } from "notistack";
 import { useCallback } from "react";
+import { suiClient } from "../lib/suiClient";
 import type { PartialZkLoginSignature } from "../types/globalContext";
-import { FULLNODE_URL } from "../utils/constant";
-
-// SuiClient instance
-const suiClient = new SuiClient({ url: FULLNODE_URL });
 
 interface ExecuteTransactionParams {
   ephemeralKeyPair: Ed25519Keypair;
@@ -30,20 +26,6 @@ interface ExecuteTransactionParams {
  * @returns {Object} - Contains the executeTransaction function
  */
 export function useSui() {
-  /**
-   * zkLoginアドレスの残高取得用カスタムフック
-   */
-  function useZkLoginAddressBalance(zkLoginUserAddress: string) {
-    const { data: addressBalance, ...rest } = useSuiClientQuery(
-      "getBalance",
-      { owner: zkLoginUserAddress },
-      {
-        enabled: Boolean(zkLoginUserAddress),
-        refetchInterval: 1500,
-      },
-    );
-    return { addressBalance, ...rest };
-  }
 
   /**
    * 送金用のトランザクションを実行するメソッド
@@ -129,6 +111,22 @@ export function useSui() {
 
   return {
     executeTransaction,
-    useZkLoginAddressBalance,
   };
+}
+
+/**
+ * ユーザーの残高を取得するメソッド
+ * @param zkLoginUserAddress 
+ * @returns 
+ */
+export function useGetBalance(zkLoginUserAddress: string) {
+  const { data: addressBalance, ...rest } = useSuiClientQuery(
+    "getBalance",
+    { owner: zkLoginUserAddress },
+    {
+      enabled: Boolean(zkLoginUserAddress),
+      refetchInterval: 1500,
+    },
+  );
+  return { addressBalance, ...rest };
 }
