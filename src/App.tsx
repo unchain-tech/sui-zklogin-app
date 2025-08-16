@@ -1,11 +1,11 @@
-import { LoadingButton } from "@mui/lab";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { useState } from "react";
-import GoogleLogo from "./assets/google.svg";
+import { FaucetLinkButton } from "./components/FaucetLinkButton";
+import { GoogleLoginButton } from "./components/GoogleLoginButton";
 import { ResetDialog } from "./components/ResetDialog";
 import { ShowBalance } from "./components/ShowBalance";
-import { TransactionSuccessAlert } from "./components/TransactionSuccessAlert";
+import { TransactionExecuteButton } from "./components/TransactionExecuteButton";
 import { useGlobalContext } from "./hooks/useGlobalContext";
 import { useSui } from "./hooks/useSui";
 import { useZKLogin } from "./hooks/useZKLogin";
@@ -79,7 +79,7 @@ function App() {
               columnGap: "16px",
             }}
           >
-            Sui zkLogin Demo{" "}
+            ZKLogin Demo App{" "}
             <Typography
               sx={{
                 color: base.white,
@@ -110,55 +110,25 @@ function App() {
           />
         </Stack>
       </Box>
-
       <ShowBalance
         zkLoginUserAddress={zkLoginUserAddress}
         addressBalance={addressBalance}
       />
-
-      {/* Login Button */}
-      <Box sx={{ mt: "24px" }}>
-        <Button
-          variant="contained"
-          onClick={async () => await login()}
-        >
-          <img
-            src={GoogleLogo}
-            width="16px"
-            style={{
-              marginRight: "8px",
-            }}
-            alt="Google"
-          />
-          Sign In With Google
-        </Button>
-      </Box>
-
-      {/* Transaction Execution Button */}
-      <Box sx={{ mt: "24px" }}>
-        <LoadingButton
-          loading={executingTxn}
-          variant="contained"
-          disabled={!decodedJwt}
-          onClick={() => {
-            if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
-              executeTransaction({
-                ephemeralKeyPair,
-                zkProof,
-                decodedJwt,
-                userSalt,
-                zkLoginUserAddress,
-                maxEpoch,
-                setExecutingTxn,
-                setExecuteDigest,
-              });
-            }
-          }}
-        >
-          Execute Transaction Block
-        </LoadingButton>
-        <TransactionSuccessAlert executeDigest={executeDigest} />
-      </Box>
+      <FaucetLinkButton />
+      <GoogleLoginButton login={login} />
+      <TransactionExecuteButton
+        executingTxn={executingTxn}
+        decodedJwt={decodedJwt}
+        ephemeralKeyPair={ephemeralKeyPair}
+        zkProof={zkProof}
+        userSalt={userSalt}
+        zkLoginUserAddress={zkLoginUserAddress}
+        maxEpoch={maxEpoch}
+        executeTransaction={executeTransaction}
+        setExecutingTxn={setExecutingTxn}
+        setExecuteDigest={setExecuteDigest}
+        executeDigest={executeDigest}
+      />
     </Box>
   );
 }

@@ -15,6 +15,7 @@ export function useZKLogin() {
     generateEphemeralKeyPair,
     generateRandomnessValue,
     fetchCurrentEpoch,
+    generateNonceValue,
     generateUserSalt,
     generateZkLoginAddress,
     nonce,
@@ -22,21 +23,25 @@ export function useZKLogin() {
 
   /**
    * ZKLoginするためのメソッド
-   *
-   *
-   *
+   * 1. 一時的な鍵ペアを生成
+   * 2. 現在のエポックを取得
+   * 3. ランダムネス&ナンスを生成
+   * 4. URLのパラメータを設定
+   * 5. ユーザーソルトを生成
+   * 6. ZKLoginアドレスを生成する
    */
   const login = useCallback(async () => {
-    // 一時的な鍵ペアを生成
-    const ephemeralKeyPair = generateEphemeralKeyPair();
-    console.log("EphemeralKeyPair:", ephemeralKeyPair);
-    // 現在のエポックを取得
-    const currentEpoch = await fetchCurrentEpoch();
-    console.log("CurrentEpoch:", currentEpoch);
-    // ランダムネスを生成
-    const randomness = generateRandomnessValue();
-    console.log("Randomness:", randomness);
-    // URLのパラメータを設定
+    // すべての非同期処理を順番に完了させる
+    await generateEphemeralKeyPair();
+    await fetchCurrentEpoch();
+    await generateNonceValue();
+    await generateRandomnessValue();
+
+    // 必要ならここでuserSaltやZKLoginアドレス生成
+    await generateUserSalt();
+    await generateZkLoginAddress();
+
+    // すべて完了後にリダイレクト
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
@@ -44,20 +49,14 @@ export function useZKLogin() {
       scope: "openid",
       nonce: nonce,
     });
-    // ログインURL
     const loginURL = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+    console.log("loginURL", loginURL);
     window.location.replace(loginURL);
-
-    // ユーザーソルトを作成する
-    const userSalt = generateUserSalt();
-    console.log("UserSalt:", userSalt);
-
-    // ZKLoginアドレスを生成する
-    generateZkLoginAddress();
   }, [
     generateEphemeralKeyPair,
     fetchCurrentEpoch,
     generateRandomnessValue,
+    generateNonceValue,
     generateUserSalt,
     generateZkLoginAddress,
     nonce,

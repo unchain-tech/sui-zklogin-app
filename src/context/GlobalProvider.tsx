@@ -15,11 +15,8 @@ import queryString from "query-string";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type {
-  GlobalContextType,
-  PartialZkLoginSignature,
-} from "../types/globalContext";
-import { FULLNODE_URL, SUI_PROVER_DEV_ENDPOINT } from "../utils/constant";
+import type { GlobalContextType, PartialZkLoginSignature } from "../types/globalContext";
+import { CLIENT_ID, FULLNODE_URL, REDIRECT_URI, SUI_PROVER_DEV_ENDPOINT } from "../utils/constant";
 
 // SuiClient instance
 const suiClient = new SuiClient({ url: FULLNODE_URL });
@@ -58,6 +55,43 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   const [maxEpoch, setMaxEpoch] = useState(0);
   const [randomness, setRandomness] = useState("");
   const [activeStep, setActiveStep] = useState(0);
+
+  // nonce生成: 鍵ペア・maxEpoch・randomnessが揃ったら自動生成
+  useEffect(() => {
+    const hasIdToken = window.location.hash.includes("id_token=");
+    if (!hasIdToken && ephemeralKeyPair && maxEpoch && randomness) {
+      const newNonce = generateNonce(
+        ephemeralKeyPair.getPublicKey(),
+        maxEpoch,
+        randomness,
+      );
+      setNonce(newNonce);
+    }
+  }, [ephemeralKeyPair, maxEpoch, randomness]);
+
+  // Google OAuthリダイレクト: nonceが生成されたら自動実行
+  useEffect(() => {
+    const hasIdToken = window.location.hash.includes("id_token=");
+    if (!hasIdToken && nonce && window.location.pathname === "/") {
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        response_type: "id_token",
+        scope: "openid",
+        nonce: nonce,
+      });
+      const loginURL = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+      window.location.replace(loginURL);
+    }
+  }, [nonce]);
+
+  // ZKLoginアドレス生成: jwtStringとuserSaltが揃ったら自動生成
+  useEffect(() => {
+    if (jwtString && userSalt) {
+      const zkLoginAddress = jwtToAddress(jwtString, userSalt);
+      setZkLoginUserAddress(zkLoginAddress);
+    }
+  }, [jwtString, userSalt]);
   const [fetchingZKProof, setFetchingZKProof] = useState(false);
   const [executingTxn, setExecutingTxn] = useState(false);
   const [executeDigest, setExecuteDigest] = useState("");
@@ -67,7 +101,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   // Location の監視（OAuth パラメータの取得）
   useEffect(() => {
-    const res = queryString.parse(location.hash);
+  const res = queryString.parse(location.hash.replace(/^#/, ""));
     setOauthParams(res);
   }, [location]);
 
