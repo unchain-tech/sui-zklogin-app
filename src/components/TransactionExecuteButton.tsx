@@ -50,7 +50,7 @@ export function TransactionExecuteButton({
           background: "linear-gradient(90deg, #06b6d4 0%, #6366f1 100%)",
           color: "#fff",
           transition: "all 0.2s",
-          ':hover': {
+          ":hover": {
             background: "linear-gradient(90deg, #6366f1 0%, #06b6d4 100%)",
             color: "#fff",
           },

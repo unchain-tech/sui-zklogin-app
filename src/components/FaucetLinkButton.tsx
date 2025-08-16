@@ -1,7 +1,6 @@
 import { Box, Button } from "@mui/material";
 import { SUI_DEVNET_FAUCET } from "../utils/constant";
 
-
 export function FaucetLinkButton() {
   return (
     <Box sx={{ mt: { xs: 2, md: 4 }, textAlign: "center" }}>
@@ -23,7 +22,7 @@ export function FaucetLinkButton() {
           color: "#0ea5e9",
           background: "#fff",
           transition: "all 0.2s",
-          ':hover': {
+          ":hover": {
             background: "linear-gradient(90deg, #e0e7ff 0%, #f0fdfa 100%)",
             color: "#6366f1",
             borderColor: "#6366f1",

@@ -9,8 +9,10 @@ interface ShowBalanceProps {
   };
 }
 
-
-export function ShowBalance({ zkLoginUserAddress, addressBalance }: ShowBalanceProps) {
+export function ShowBalance({
+  zkLoginUserAddress,
+  addressBalance,
+}: ShowBalanceProps) {
   if (!zkLoginUserAddress) return null;
 
   return (
@@ -50,7 +52,11 @@ export function ShowBalance({ zkLoginUserAddress, addressBalance }: ShowBalanceP
             ml: { md: 2 },
           }}
         >
-          Balance: {BigNumber(addressBalance?.totalBalance).div(MIST_PER_SUI.toString()).toFixed(6)} SUI
+          Balance:{" "}
+          {BigNumber(addressBalance?.totalBalance)
+            .div(MIST_PER_SUI.toString())
+            .toFixed(6)}{" "}
+          SUI
         </Typography>
       )}
     </Box>

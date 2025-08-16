@@ -1,3 +1,4 @@
+import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { SuiClient } from "@mysten/sui.js/client";
 import type { SerializedSignature } from "@mysten/sui.js/cryptography";
 import type { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
@@ -29,6 +30,21 @@ interface ExecuteTransactionParams {
  * @returns {Object} - Contains the executeTransaction function
  */
 export function useSui() {
+  /**
+   * zkLoginアドレスの残高取得用カスタムフック
+   */
+  function useZkLoginAddressBalance(zkLoginUserAddress: string) {
+    const { data: addressBalance, ...rest } = useSuiClientQuery(
+      "getBalance",
+      { owner: zkLoginUserAddress },
+      {
+        enabled: Boolean(zkLoginUserAddress),
+        refetchInterval: 1500,
+      },
+    );
+    return { addressBalance, ...rest };
+  }
+
   /**
    * 送金用のトランザクションを実行するメソッド
    */
@@ -113,5 +129,6 @@ export function useSui() {
 
   return {
     executeTransaction,
+    useZkLoginAddressBalance,
   };
 }

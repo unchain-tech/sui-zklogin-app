@@ -1,10 +1,10 @@
 import {
-    Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 
 interface ResetDialogProps {
@@ -12,7 +12,6 @@ interface ResetDialogProps {
   onClose: () => void;
   onConfirm: () => void;
 }
-
 
 export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
   return (
@@ -28,13 +27,28 @@ export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
         },
       }}
     >
-      <DialogTitle sx={{ fontWeight: 700, fontSize: { xs: "1.1rem", md: "1.25rem" }, color: "#6366f1" }}>
+      <DialogTitle
+        sx={{
+          fontWeight: 700,
+          fontSize: { xs: "1.1rem", md: "1.25rem" },
+          color: "#6366f1",
+        }}
+      >
         Reset Local State
       </DialogTitle>
       <DialogContent>
-        <DialogContentText sx={{ fontWeight: 500, color: "#334155", fontSize: { xs: "0.95rem", md: "1.05rem" } }}>
-          <span style={{ fontWeight: 700, color: "#ef4444" }}>Salt</span>（localStorage保存値）をクリアします。<br />
-          以前生成したアドレスは復元できなくなります。<br />
+        <DialogContentText
+          sx={{
+            fontWeight: 500,
+            color: "#334155",
+            fontSize: { xs: "0.95rem", md: "1.05rem" },
+          }}
+        >
+          <span style={{ fontWeight: 700, color: "#ef4444" }}>Salt</span>
+          （localStorage保存値）をクリアします。
+          <br />
+          以前生成したアドレスは復元できなくなります。
+          <br />
           本当にリセットしますか？
         </DialogContentText>
       </DialogContent>
@@ -51,7 +65,12 @@ export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
           onClick={onConfirm}
           variant="contained"
           color="error"
-          sx={{ borderRadius: 3, px: 3, fontWeight: 700, boxShadow: "0 1px 8px #ef444433" }}
+          sx={{
+            borderRadius: 3,
+            px: 3,
+            fontWeight: 700,
+            boxShadow: "0 1px 8px #ef444433",
+          }}
         >
           Confirm
         </Button>

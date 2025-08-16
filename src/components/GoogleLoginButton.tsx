@@ -5,7 +5,6 @@ interface GoogleLoginButtonProps {
   login: () => Promise<void>;
 }
 
-
 export function GoogleLoginButton({ login }: GoogleLoginButtonProps) {
   return (
     <Box sx={{ mt: { xs: 2, md: 4 }, textAlign: "center" }}>
@@ -23,12 +22,20 @@ export function GoogleLoginButton({ login }: GoogleLoginButtonProps) {
           color: "#fff",
           gap: 2,
           transition: "all 0.2s",
-          ':hover': {
+          ":hover": {
             background: "linear-gradient(90deg, #6366f1 0%, #fbbf24 100%)",
             color: "#fff",
           },
         }}
-        startIcon={<img src={GoogleLogo} width={24} height={24} alt="Google" style={{ borderRadius: 4, boxShadow: "0 1px 4px #aaa" }} />}
+        startIcon={
+          <img
+            src={GoogleLogo}
+            width={24}
+            height={24}
+            alt="Google"
+            style={{ borderRadius: 4, boxShadow: "0 1px 4px #aaa" }}
+          />
+        }
       >
         Sign In With Google
       </Button>

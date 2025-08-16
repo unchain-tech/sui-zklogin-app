@@ -41,7 +41,11 @@ export function TransactionSuccessAlert({
           href={`https://suiexplorer.com/txblock/${executeDigest}?network=devnet`}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ textDecoration: "underline", color: "#2563eb", fontWeight: 700 }}
+          style={{
+            textDecoration: "underline",
+            color: "#2563eb",
+            fontWeight: 700,
+          }}
         >
           {executeDigest}
         </a>

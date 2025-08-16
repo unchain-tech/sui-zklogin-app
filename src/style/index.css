@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   font-family: "Montserrat", sans-serif;
   line-height: 1.5;
@@ -32,7 +31,6 @@ code {
   border-radius: 4px;
 }
 
-
 body {
   margin: 0;
   min-width: 320px;
@@ -56,7 +54,12 @@ body::before {
   left: -120px;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle at 40% 40%, #6366f1 0%, #06b6d4 60%, transparent 100%);
+  background: radial-gradient(
+    circle at 40% 40%,
+    #6366f1 0%,
+    #06b6d4 60%,
+    transparent 100%
+  );
   opacity: 0.18;
   z-index: 0;
 }
@@ -68,7 +71,12 @@ body::after {
   right: -120px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle at 60% 60%, #fbbf24 0%, #6366f1 60%, transparent 100%);
+  background: radial-gradient(
+    circle at 60% 60%,
+    #fbbf24 0%,
+    #6366f1 60%,
+    transparent 100%
+  );
   opacity: 0.13;
   z-index: 0;
 }

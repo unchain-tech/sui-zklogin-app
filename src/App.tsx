@@ -1,5 +1,4 @@
 import { Box } from "@mui/material";
-import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { FaucetLinkButton } from "./components/FaucetLinkButton";
 import { GoogleLoginButton } from "./components/GoogleLoginButton";
 import { Header } from "./components/Header";
@@ -33,28 +32,18 @@ function App() {
   } = useGlobalContext();
 
   // useSui hook を使用
-  const { executeTransaction } = useSui();
+  const { executeTransaction, useZkLoginAddressBalance } = useSui();
   // useZKLogin hook を使用
   const { login } = useZKLogin();
-
-  // query zkLogin address balance
-  const { data: addressBalance } = useSuiClientQuery(
-    "getBalance",
-    {
-      owner: zkLoginUserAddress,
-    },
-    {
-      enabled: Boolean(zkLoginUserAddress),
-      refetchInterval: 1500,
-    },
-  );
 
   return (
     <Box>
       <Header />
       <ShowBalance
         zkLoginUserAddress={zkLoginUserAddress}
-        addressBalance={addressBalance}
+        addressBalance={
+          useZkLoginAddressBalance(zkLoginUserAddress)!.addressBalance
+        }
       />
       {zkLoginUserAddress && <FaucetLinkButton />}
       {!zkLoginUserAddress && <GoogleLoginButton login={login} />}
