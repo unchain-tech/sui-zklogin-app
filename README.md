@@ -17,6 +17,29 @@ This example breaks down the complete process of Sui zkLogin into seven steps, a
 
 Each step includes corresponding code snippets, providing instructions on how to obtain the required data for each step.
 
+## Environment Setup
+
+### Environment Variables
+Copy the environment file and configure your settings:
+
+```bash
+cp .env .env.local
+```
+
+Edit `.env.local` with your configuration:
+- `VITE_GOOGLE_CLIENT_ID`: Your Google OAuth 2.0 Client ID
+- `VITE_REDIRECT_URI`: Your application's redirect URI (use `http://localhost:5173/` for development)
+- Other Sui network endpoints (defaults provided)
+
+### Development
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
 ## Operating environment
 
 The example runs in Sui Devnet. All data the user generates is stored locally on the client-side (browser). The acquisition of the zero-knowledge proof (ZK proof) is done through a call to the [Mysten Labs-maintained proving service](../zklogin.mdx#call-the-mysten-labs-maintained-proving-service). Therefore, running the example does not require an additional deployed backend server (or a Docker container).

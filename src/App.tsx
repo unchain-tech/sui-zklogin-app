@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  ButtonGroup,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,7 +12,7 @@ import {
   Step,
   StepLabel,
   Stepper,
-  Typography,
+  Typography
 } from "@mui/material";
 import { fromB64 } from "@mysten/bcs";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
@@ -40,8 +39,8 @@ import { Trans, useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import "./App.css";
 import GoogleLogo from "./assets/google.svg";
+import "./style/App.css";
 import {
   CLIENT_ID,
   FULLNODE_URL,
@@ -50,19 +49,24 @@ import {
   RANDOMNESS_SESSION_STORAGE_KEY,
   REDIRECT_URI,
   STEPS_LABELS_TRANS_KEY,
-  SUI_DEVNET_FAUCET,
   SUI_PROVER_DEV_ENDPOINT,
-  USER_SALT_LOCAL_STORAGE_KEY,
+  USER_SALT_LOCAL_STORAGE_KEY
 } from "./utils/constant";
-import { base, gray } from "./theme/colors";
+import { base, gray } from "./utils/theme/colors";
 
+// ZK Login用の署名データの型定義
 export type PartialZkLoginSignature = Omit<
   Parameters<typeof getZkLoginSignature>["0"]["inputs"],
   "addressSeed"
 >;
 
+// Sui Clientの初期化
 const suiClient = new SuiClient({ url: FULLNODE_URL });
 
+/**
+ * App Component
+ * @returns 
+ */
 function App() {
   const { t, i18n } = useTranslation();
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -179,6 +183,9 @@ function App() {
     },
   );
 
+  /**
+   * リセット用のメソッド
+   */
   const resetState = () => {
     setCurrentEpoch("");
     setNonce("");
@@ -198,6 +205,9 @@ function App() {
     setExecuteDigest("");
   };
 
+  /**
+   * ローカルストレージをリセットするメソッド
+   */
   const resetLocalState = () => {
     try {
       window.sessionStorage.clear();
@@ -213,31 +223,6 @@ function App() {
       enqueueSnackbar(String(error), {
         variant: "error",
       });
-    }
-  };
-
-  const [requestingFaucet, setRequestingFaucet] = useState(false);
-
-  const requestFaucet = async () => {
-    if (!zkLoginUserAddress) {
-      return;
-    }
-    try {
-      setRequestingFaucet(true);
-      await axios.post(SUI_DEVNET_FAUCET, {
-        FixedAmountRequest: {
-          recipient: zkLoginUserAddress,
-        },
-      });
-      enqueueSnackbar("Success!", {
-        variant: "success",
-      });
-    } catch (error) {
-      enqueueSnackbar(String(error), {
-        variant: "error",
-      });
-    } finally {
-      setRequestingFaucet(false);
     }
   };
 
@@ -263,29 +248,6 @@ function App() {
             }}
           >
             Sui zkLogin Demo{" "}
-            <ButtonGroup
-              variant="outlined"
-              aria-label="Disabled elevation buttons"
-            >
-              <Button
-                size="small"
-                variant={lang === "en" ? "contained" : "outlined"}
-                onClick={() => {
-                  setLang("en");
-                }}
-              >
-                ENG
-              </Button>
-              <Button
-                size="small"
-                variant={lang === "zh" ? "contained" : "outlined"}
-                onClick={() => {
-                  setLang("zh");
-                }}
-              >
-                中文
-              </Button>
-            </ButtonGroup>
             <Typography
               sx={{
                 color: base.white,
@@ -350,28 +312,7 @@ function App() {
             </DialogActions>
           </Dialog>
         </Stack>
-        <Stack direction="row" alignItems="center" spacing={4}>
-          <Typography>
-            <a
-              href="https://github.com/mashharuki/sui-zklogin-demo"
-              target="_blank"
-            >
-              @ Github Repo
-            </a>
-          </Typography>
-        </Stack>
       </Box>
-      {/* devnet unavailable Alert   */}
-      {/* <Alert
-        severity="error"
-        sx={{
-          mb: "36px",
-          fontWeight: 600,
-        }}
-      >
-        Sui Devnet node is currently unavailable, and the demo process may not
-        be completed.
-      </Alert> */}
       <Box
         sx={{
           width: "100%",
@@ -894,18 +835,6 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                   </Typography>
                 </code>
               )}
-              <LoadingButton
-                variant="contained"
-                sx={{
-                  ml: "24px",
-                }}
-                size="small"
-                loading={requestingFaucet}
-                disabled={!zkLoginUserAddress}
-                onClick={requestFaucet}
-              >
-                Request Test SUI Token
-              </LoadingButton>
             </Typography>
             {zkLoginUserAddress && (
               <Alert severity="success">

@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@emotion/react";
 import { createTheme } from "@mui/material";
-import { SuiClientProvider, createNetworkConfig } from "@mysten/dapp-kit";
+import { createNetworkConfig, SuiClientProvider } from "@mysten/dapp-kit";
 import { getFullnodeUrl } from "@mysten/sui.js/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -10,9 +10,9 @@ import { initReactI18next } from "react-i18next";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import App from "./App.tsx";
 import { StyledSnackbarProvider } from "./components/StyledSnackbarProvider.tsx";
-import "./index.css";
-import ThemeConfig from "./theme/index.ts";
-import { resources } from "./lang/resources.ts";
+import "./style/index.css";
+import { resources } from "./utils/lang/resources.ts";
+import ThemeConfig from "./utils/theme/index.ts";
 
 // ネットワーク設定を読み込み
 const { networkConfig } = createNetworkConfig({

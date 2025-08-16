@@ -1,6 +1,6 @@
 import { styled } from "@mui/material";
 import { SnackbarProvider, SnackbarProviderProps } from "notistack";
-import { primary, error, warning, success } from "../theme/colors";
+import { error, primary, success, warning } from "../utils/theme/colors";
 
 /**
  * StyledSnackbarProvider コンポーネント
