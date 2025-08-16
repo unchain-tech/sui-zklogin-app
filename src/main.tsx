@@ -4,13 +4,13 @@ import { createNetworkConfig, SuiClientProvider } from "@mysten/dapp-kit";
 import { getFullnodeUrl } from "@mysten/sui.js/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
-import ReactDOM from "react-dom/client";
+import * as ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import App from "./App.tsx";
-import { StyledSnackbarProvider } from "./components/StyledSnackbarProvider.tsx";
-import { GlobalProvider } from "./context/GlobalProvider.tsx";
+import App from "./App.js";
+import { StyledSnackbarProvider } from "./components/StyledSnackbarProvider.js";
+import { GlobalProvider } from "./context/GlobalProvider.js";
 import "./style/index.css";
-import ThemeConfig from "./utils/theme/index.ts";
+import ThemeConfig from "./utils/theme";
 
 // ネットワーク設定を読み込み
 const { networkConfig } = createNetworkConfig({
