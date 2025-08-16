@@ -65,7 +65,7 @@ export function useSui() {
         const { bytes, signature: userSignature } = await txb.sign({
           client: suiClient,
           // This must be the same ephemeral key pair used in the ZKP requests
-          signer: ephemeralKeyPair, 
+          signer: ephemeralKeyPair,
         });
 
         if (!decodedJwt?.sub || !decodedJwt.aud) {

@@ -48,9 +48,6 @@ export interface GlobalContextType {
   setExecutingTxn: (value: boolean) => void;
   setExecuteDigest: (value: string) => void;
 
-  // Computed values
-  nextButtonDisabled: boolean;
-
   // Methods
   resetState: () => void;
   resetLocalState: () => void;

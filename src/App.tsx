@@ -42,9 +42,7 @@ function App() {
   const { executeTransaction } = useSui();
 
   // useZKLogin hook を使用
-  const {
-    login
-  } = useZKLogin();
+  const { login } = useZKLogin();
 
   // query zkLogin address balance
   const { data: addressBalance } = useSuiClientQuery(

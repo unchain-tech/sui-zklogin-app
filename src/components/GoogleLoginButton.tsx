@@ -8,10 +8,7 @@ interface GoogleLoginButtonProps {
 export function GoogleLoginButton({ login }: GoogleLoginButtonProps) {
   return (
     <Box sx={{ mt: "24px" }}>
-      <Button
-        variant="contained"
-        onClick={async () => await login()}
-      >
+      <Button variant="contained" onClick={async () => await login()}>
         <img
           src={GoogleLogo}
           width="16px"

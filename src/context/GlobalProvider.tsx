@@ -13,10 +13,18 @@ import { jwtDecode } from "jwt-decode";
 import { enqueueSnackbar } from "notistack";
 import queryString from "query-string";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { GlobalContextType, PartialZkLoginSignature } from "../types/globalContext";
-import { CLIENT_ID, FULLNODE_URL, REDIRECT_URI, SUI_PROVER_DEV_ENDPOINT } from "../utils/constant";
+import type {
+  GlobalContextType,
+  PartialZkLoginSignature,
+} from "../types/globalContext";
+import {
+  CLIENT_ID,
+  FULLNODE_URL,
+  REDIRECT_URI,
+  SUI_PROVER_DEV_ENDPOINT,
+} from "../utils/constant";
 
 // SuiClient instance
 const suiClient = new SuiClient({ url: FULLNODE_URL });
@@ -60,6 +68,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   useEffect(() => {
     const hasIdToken = window.location.hash.includes("id_token=");
     if (!hasIdToken && ephemeralKeyPair && maxEpoch && randomness) {
+      // ナンスを生成する
       const newNonce = generateNonce(
         ephemeralKeyPair.getPublicKey(),
         maxEpoch,
@@ -88,10 +97,12 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   // ZKLoginアドレス生成: jwtStringとuserSaltが揃ったら自動生成
   useEffect(() => {
     if (jwtString && userSalt) {
+      // ZKLogin 用のウォレットアドレスを生成
       const zkLoginAddress = jwtToAddress(jwtString, userSalt);
       setZkLoginUserAddress(zkLoginAddress);
     }
   }, [jwtString, userSalt]);
+
   const [fetchingZKProof, setFetchingZKProof] = useState(false);
   const [executingTxn, setExecutingTxn] = useState(false);
   const [executeDigest, setExecuteDigest] = useState("");
@@ -101,13 +112,14 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   // Location の監視（OAuth パラメータの取得）
   useEffect(() => {
-  const res = queryString.parse(location.hash.replace(/^#/, ""));
+    const res = queryString.parse(location.hash.replace(/^#/, ""));
     setOauthParams(res);
   }, [location]);
 
   // JWT トークンの処理
   useEffect(() => {
     if (oauthParams?.id_token) {
+      // IDトークンをデコードしてJWTを取得する
       const decodedJwt = jwtDecode(oauthParams.id_token as string);
       setJwtString(oauthParams.id_token as string);
       setDecodedJwt(decodedJwt);
@@ -148,37 +160,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       setMaxEpoch(Number(savedMaxEpoch));
     }
   }, []);
-
-  // Next ボタンの無効化判定
-  const nextButtonDisabled = useMemo(() => {
-    switch (activeStep) {
-      case 0:
-        return !ephemeralKeyPair;
-      case 1:
-        return !currentEpoch || !randomness;
-      case 2:
-        return !jwtString;
-      case 3:
-        return !userSalt;
-      case 4:
-        return !zkLoginUserAddress;
-      case 5:
-        return !zkProof;
-      case 6:
-        return true;
-      default:
-        return false;
-    }
-  }, [
-    currentEpoch,
-    randomness,
-    activeStep,
-    jwtString,
-    ephemeralKeyPair,
-    zkLoginUserAddress,
-    zkProof,
-    userSalt,
-  ]);
 
   // Methods
   const resetState = () => {
@@ -396,9 +377,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setFetchingZKProof,
     setExecutingTxn,
     setExecuteDigest,
-
-    // Computed values
-    nextButtonDisabled,
 
     // Methods
     resetState,
