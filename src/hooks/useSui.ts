@@ -57,7 +57,7 @@ export function useSui() {
         // 検証用のコインオブジェクトを作成
         txb.transferObjects(
           [coin],
-          "0xfa0f8542f256e669694624aa3ee7bfbde5af54641646a3a05924cf9e329a8a36",
+          "0x6c1aa061d0495b71eefd97e7d0a1cef0092f5c64d1b751decdc7b5ad0d039c02",
         );
         txb.setSender(zkLoginUserAddress);
 

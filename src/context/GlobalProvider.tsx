@@ -13,7 +13,7 @@ import { jwtDecode } from "jwt-decode";
 import { enqueueSnackbar } from "notistack";
 import queryString from "query-string";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type {
   GlobalContextType,
@@ -102,6 +102,96 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       setZkLoginUserAddress(zkLoginAddress);
     }
   }, [jwtString, userSalt]);
+
+  // ephemeralKeyPairがセットされたら拡張公開鍵を自動生成
+  const generateExtendedEphemeralPublicKeyCallback = useCallback(() => {
+    if (!ephemeralKeyPair) return;
+    const extendedKey = getExtendedEphemeralPublicKey(
+      ephemeralKeyPair.getPublicKey(),
+    );
+    setExtendedEphemeralPublicKey(extendedKey);
+  }, [ephemeralKeyPair]);
+
+  useEffect(() => {
+    if (ephemeralKeyPair) {
+      generateExtendedEphemeralPublicKeyCallback();
+    }
+  }, [ephemeralKeyPair, generateExtendedEphemeralPublicKeyCallback]);
+
+  // ephemeralKeyPairがセットされたら拡張公開鍵を自動生成
+  useEffect(() => {
+    if (ephemeralKeyPair) {
+      generateExtendedEphemeralPublicKeyCallback();
+    }
+  }, [ephemeralKeyPair, generateExtendedEphemeralPublicKeyCallback]);
+
+  // ZKProof自動取得: 必要な情報が揃ったらfetchZkProofを呼び出す
+  const fetchZkProofCallback = useCallback(async () => {
+    if (
+      jwtString &&
+      userSalt &&
+      maxEpoch &&
+      ephemeralKeyPair &&
+      extendedEphemeralPublicKey &&
+      randomness
+    ) {
+      setFetchingZKProof(true);
+      try {
+        const zkProofResult = await axios.post(
+          SUI_PROVER_DEV_ENDPOINT,
+          {
+            jwt: oauthParams?.id_token as string,
+            extendedEphemeralPublicKey,
+            maxEpoch,
+            jwtRandomness: randomness,
+            salt: userSalt,
+            keyClaimName: "sub",
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        setZkProof(zkProofResult.data as PartialZkLoginSignature);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setFetchingZKProof(false);
+      }
+    }
+  }, [
+    jwtString,
+    userSalt,
+    maxEpoch,
+    ephemeralKeyPair,
+    extendedEphemeralPublicKey,
+    randomness,
+    oauthParams,
+  ]);
+
+  useEffect(() => {
+    if (
+      jwtString &&
+      userSalt &&
+      maxEpoch &&
+      ephemeralKeyPair &&
+      extendedEphemeralPublicKey &&
+      randomness &&
+      !zkProof
+    ) {
+      fetchZkProofCallback();
+    }
+  }, [
+    jwtString,
+    userSalt,
+    maxEpoch,
+    ephemeralKeyPair,
+    extendedEphemeralPublicKey,
+    randomness,
+    zkProof,
+    fetchZkProofCallback,
+  ]);
 
   const [fetchingZKProof, setFetchingZKProof] = useState(false);
   const [executingTxn, setExecutingTxn] = useState(false);
@@ -295,14 +385,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * 一時鍵ペアから拡張公開鍵を生成
    * @returns
    */
-  const generateExtendedEphemeralPublicKey = () => {
-    if (!ephemeralKeyPair) return;
-    // 一時鍵ペアから拡張公開鍵を生成
-    const extendedKey = getExtendedEphemeralPublicKey(
-      ephemeralKeyPair.getPublicKey(),
-    );
-    setExtendedEphemeralPublicKey(extendedKey);
-  };
 
   /**
    * ZKプルーフを取得
@@ -389,7 +471,8 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     generateUserSalt,
     deleteUserSalt,
     generateZkLoginAddress,
-    generateExtendedEphemeralPublicKey,
+    generateExtendedEphemeralPublicKey:
+      generateExtendedEphemeralPublicKeyCallback,
     fetchZkProof,
   };
 

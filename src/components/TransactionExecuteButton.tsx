@@ -16,6 +16,11 @@ interface TransactionExecuteButtonProps {
   executeDigest: string;
 }
 
+/**
+ * TransactionExecuteButton Component
+ * @param param0 - Props for the component
+ * @returns JSX.Element
+ */
 export function TransactionExecuteButton({
   executingTxn,
   decodedJwt,
@@ -36,6 +41,10 @@ export function TransactionExecuteButton({
         variant="contained"
         disabled={!decodedJwt}
         onClick={() => {
+          console.log("ephemeralKeyPair", ephemeralKeyPair);
+          console.log("zkProof", zkProof);
+          console.log("decodedJwt", decodedJwt);
+          console.log("userSalt", userSalt);
           if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
             executeTransaction({
               ephemeralKeyPair,
@@ -47,6 +56,8 @@ export function TransactionExecuteButton({
               setExecutingTxn,
               setExecuteDigest,
             });
+          } else {
+            console.warn("Transaction prerequisites missing");
           }
         }}
       >

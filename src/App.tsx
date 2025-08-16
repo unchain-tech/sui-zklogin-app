@@ -99,7 +99,7 @@ function App() {
               setShowResetDialog(true);
             }}
           >
-            Reset LocalState
+            Logout
           </Button>
           <ResetDialog
             open={showResetDialog}
@@ -112,8 +112,8 @@ function App() {
         zkLoginUserAddress={zkLoginUserAddress}
         addressBalance={addressBalance}
       />
-      <FaucetLinkButton />
-      <GoogleLoginButton login={login} />
+      {zkLoginUserAddress && <FaucetLinkButton />}
+      {!zkLoginUserAddress && <GoogleLoginButton login={login} />}
       <TransactionExecuteButton
         executingTxn={executingTxn}
         decodedJwt={decodedJwt}
