@@ -1,175 +1,73 @@
 import { LoadingButton } from "@mui/lab";
-import {
-  Alert,
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Stack,
-  Step,
-  StepLabel,
-  Stepper,
-  Typography
-} from "@mui/material";
-import { fromB64 } from "@mysten/bcs";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { SuiClient } from "@mysten/sui.js/client";
-import { SerializedSignature } from "@mysten/sui.js/cryptography";
-import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
+import type { SerializedSignature } from "@mysten/sui.js/cryptography";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { MIST_PER_SUI } from "@mysten/sui.js/utils";
-import {
-  genAddressSeed,
-  generateNonce,
-  generateRandomness,
-  getExtendedEphemeralPublicKey,
-  getZkLoginSignature,
-  jwtToAddress,
-} from "@mysten/zklogin";
-import axios from "axios";
-import { BigNumber } from "bignumber.js";
-import { JwtPayload, jwtDecode } from "jwt-decode";
+import { genAddressSeed, getZkLoginSignature } from "@mysten/zklogin";
 import { enqueueSnackbar } from "notistack";
-import queryString from "query-string";
-import { useEffect, useMemo, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import GoogleLogo from "./assets/google.svg";
+import { ResetDialog } from "./components/ResetDialog";
+import { ShowBalance } from "./components/ShowBalance";
+import { useGlobalContext } from "./hooks/useGlobalContext";
 import "./style/App.css";
-import {
-  CLIENT_ID,
-  FULLNODE_URL,
-  KEY_PAIR_SESSION_STORAGE_KEY,
-  MAX_EPOCH_LOCAL_STORAGE_KEY,
-  RANDOMNESS_SESSION_STORAGE_KEY,
-  REDIRECT_URI,
-  STEPS_LABELS_TRANS_KEY,
-  SUI_PROVER_DEV_ENDPOINT,
-  USER_SALT_LOCAL_STORAGE_KEY
-} from "./utils/constant";
+import { CLIENT_ID, FULLNODE_URL, REDIRECT_URI } from "./utils/constant";
 import { base, gray } from "./utils/theme/colors";
 
-// ZK Login用の署名データの型定義
-export type PartialZkLoginSignature = Omit<
-  Parameters<typeof getZkLoginSignature>["0"]["inputs"],
-  "addressSeed"
->;
-
-// Sui Clientの初期化
+// SuiClient instance
 const suiClient = new SuiClient({ url: FULLNODE_URL });
 
 /**
  * App Component
- * @returns 
+ * @returns
  */
 function App() {
-  const { t, i18n } = useTranslation();
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [currentEpoch, setCurrentEpoch] = useState("");
-  const [nonce, setNonce] = useState("");
-  const [oauthParams, setOauthParams] =
-    useState<queryString.ParsedQuery<string>>();
-  const [zkLoginUserAddress, setZkLoginUserAddress] = useState("");
-  const [decodedJwt, setDecodedJwt] = useState<JwtPayload>();
-  const [jwtString, setJwtString] = useState("");
-  const [ephemeralKeyPair, setEphemeralKeyPair] = useState<Ed25519Keypair>();
-  const [userSalt, setUserSalt] = useState<string>();
-  const [zkProof, setZkProof] = useState<PartialZkLoginSignature>();
-  const [extendedEphemeralPublicKey, setExtendedEphemeralPublicKey] =
-    useState("");
-  const [maxEpoch, setMaxEpoch] = useState(0);
-  const [randomness, setRandomness] = useState("");
-  const [activeStep, setActiveStep] = useState(0);
-  const [fetchingZKProof, setFetchingZKProof] = useState(false);
-  const [executingTxn, setExecutingTxn] = useState(false);
-  const [executeDigest, setExecuteDigest] = useState("");
-  const [lang, setLang] = useState<"zh" | "en">("en");
-
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  // Change lng
-  useEffect(() => {
-    i18n.changeLanguage(lang);
-  }, [i18n, lang]);
-
-  useEffect(() => {
-    const res = queryString.parse(location.hash);
-    setOauthParams(res);
-  }, [location]);
-
-  // query jwt id_token
-  useEffect(() => {
-    if (oauthParams && oauthParams.id_token) {
-      const decodedJwt = jwtDecode(oauthParams.id_token as string);
-      setJwtString(oauthParams.id_token as string);
-      setDecodedJwt(decodedJwt);
-      setActiveStep(2);
-    }
-  }, [oauthParams]);
-
-  useEffect(() => {
-    const privateKey = window.sessionStorage.getItem(
-      KEY_PAIR_SESSION_STORAGE_KEY,
-    );
-    if (privateKey) {
-      const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(
-        fromB64(privateKey),
-      );
-      setEphemeralKeyPair(ephemeralKeyPair);
-    }
-    const randomness = window.sessionStorage.getItem(
-      RANDOMNESS_SESSION_STORAGE_KEY,
-    );
-    if (randomness) {
-      setRandomness(randomness);
-    }
-    const userSalt = window.localStorage.getItem(USER_SALT_LOCAL_STORAGE_KEY);
-    if (userSalt) {
-      setUserSalt(userSalt);
-    }
-
-    const maxEpoch = window.localStorage.getItem(MAX_EPOCH_LOCAL_STORAGE_KEY);
-
-    if (maxEpoch) {
-      setMaxEpoch(Number(maxEpoch));
-    }
-  }, []);
-
-  const nextButtonDisabled = useMemo(() => {
-    switch (activeStep) {
-      case 0:
-        return !ephemeralKeyPair;
-      case 1:
-        return !currentEpoch || !randomness;
-      case 2:
-        return !jwtString;
-      case 3:
-        return !userSalt;
-      case 4:
-        return !zkLoginUserAddress;
-      case 5:
-        return !zkProof;
-      case 6:
-        return true;
-      default:
-        break;
-    }
-  }, [
+  // GlobalProvider から状態とメソッドを取得
+  const {
+    // 状態
     currentEpoch,
-    randomness,
-    activeStep,
+    nonce,
+    oauthParams,
+    zkLoginUserAddress,
+    decodedJwt,
     jwtString,
     ephemeralKeyPair,
-    zkLoginUserAddress,
-    zkProof,
     userSalt,
-  ]);
+    zkProof,
+    extendedEphemeralPublicKey,
+    maxEpoch,
+    randomness,
+    activeStep,
+    fetchingZKProof,
+    executingTxn,
+    executeDigest,
+    nextButtonDisabled,
+
+    // State setters
+    setActiveStep,
+    setExecutingTxn,
+    setExecuteDigest,
+
+    // メソッド
+    resetLocalState,
+    generateEphemeralKeyPair,
+    clearEphemeralKeyPair,
+    fetchCurrentEpoch,
+    generateRandomnessValue,
+    generateNonceValue,
+    generateUserSalt,
+    deleteUserSalt,
+    generateZkLoginAddress,
+    generateExtendedEphemeralPublicKey,
+    fetchZkProof,
+  } = useGlobalContext();
+
+  // ローカルな状態（Dialog表示のみ）
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // query zkLogin address balance
   const { data: addressBalance } = useSuiClientQuery(
@@ -182,49 +80,6 @@ function App() {
       refetchInterval: 1500,
     },
   );
-
-  /**
-   * リセット用のメソッド
-   */
-  const resetState = () => {
-    setCurrentEpoch("");
-    setNonce("");
-    setOauthParams(undefined);
-    setZkLoginUserAddress("");
-    setDecodedJwt(undefined);
-    setJwtString("");
-    setEphemeralKeyPair(undefined);
-    setUserSalt(undefined);
-    setZkProof(undefined);
-    setExtendedEphemeralPublicKey("");
-    setMaxEpoch(0);
-    setRandomness("");
-    setActiveStep(0);
-    setFetchingZKProof(false);
-    setExecutingTxn(false);
-    setExecuteDigest("");
-  };
-
-  /**
-   * ローカルストレージをリセットするメソッド
-   */
-  const resetLocalState = () => {
-    try {
-      window.sessionStorage.clear();
-      window.localStorage.clear();
-      resetState();
-      setShowResetDialog(false);
-      navigate(`/`);
-      setActiveStep(0);
-      enqueueSnackbar("Reset successful", {
-        variant: "success",
-      });
-    } catch (error) {
-      enqueueSnackbar(String(error), {
-        variant: "error",
-      });
-    }
-  };
 
   return (
     <Box>
@@ -271,63 +126,13 @@ function App() {
           >
             Reset LocalState
           </Button>
-          <Dialog
+          <ResetDialog
             open={showResetDialog}
-            onClose={() => {
-              setShowResetDialog(false);
-            }}
-          >
-            <DialogTitle>
-              Please confirm if you want to reset the local state?
-            </DialogTitle>
-            <DialogContent>
-              <DialogContentText>
-                Resetting the local state{" "}
-                <span
-                  style={{
-                    fontWeight: 600,
-                  }}
-                >
-                  will clear the Salt value
-                </span>{" "}
-                stored in local storage, rendering previously generated
-                addresses irretrievable.
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={() => {
-                  setShowResetDialog(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  resetLocalState();
-                }}
-              >
-                Confirm
-              </Button>
-            </DialogActions>
-          </Dialog>
+            onClose={() => setShowResetDialog(false)}
+            onConfirm={resetLocalState}
+          />
         </Stack>
       </Box>
-      <Box
-        sx={{
-          width: "100%",
-          overflowX: "hidden",
-        }}
-      >
-        <Stepper activeStep={activeStep}>
-          {STEPS_LABELS_TRANS_KEY.map((stepLabel, index) => (
-            <Step key={index}>
-              <StepLabel>{t(stepLabel)}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Box>
-
       <Box sx={{ mt: "24px" }}>
         <Button
           variant="outlined"
@@ -354,32 +159,10 @@ function App() {
         )}
       </Box>
 
-      {zkLoginUserAddress && (
-        <Stack direction="row" spacing={1} sx={{ mt: "24px" }}>
-          <Typography>
-            <code>
-              <Typography
-                component="span"
-                sx={{
-                  fontFamily: "'Noto Sans Mono', monospace;",
-                  fontWeight: 600,
-                }}
-              >
-                {zkLoginUserAddress}
-              </Typography>
-            </code>
-          </Typography>
-          {addressBalance && (
-            <Typography>
-              Balance:{" "}
-              {BigNumber(addressBalance?.totalBalance)
-                .div(MIST_PER_SUI.toString())
-                .toFixed(6)}{" "}
-              SUI
-            </Typography>
-          )}
-        </Stack>
-      )}
+      <ShowBalance
+        zkLoginUserAddress={zkLoginUserAddress}
+        addressBalance={addressBalance}
+      />
 
       <Box
         sx={{
@@ -398,27 +181,20 @@ function App() {
                 mb: "12px !important",
               }}
             >
-              {t("431375b3")}
+              Step 1: Generate Ephemeral Key Pair
             </Typography>
             <Typography>
-              <Trans i18nKey={"62a0a307"}>
-                The ephemeral key pair is used to sign the
-                <code>TransactionBlock</code>
-              </Trans>
+              The ephemeral key pair is used to sign the{" "}
+              <code>TransactionBlock</code>
             </Typography>
-            <Typography>{t("9ec629a8")} (Session Storage)</Typography>
+            <Typography>
+              Stored in the browser session (Session Storage)
+            </Typography>
             <Stack direction="row" spacing={2}>
               <Button
                 variant="contained"
                 disabled={Boolean(ephemeralKeyPair)}
-                onClick={() => {
-                  const ephemeralKeyPair = Ed25519Keypair.generate();
-                  window.sessionStorage.setItem(
-                    KEY_PAIR_SESSION_STORAGE_KEY,
-                    ephemeralKeyPair.export().privateKey,
-                  );
-                  setEphemeralKeyPair(ephemeralKeyPair);
-                }}
+                onClick={generateEphemeralKeyPair}
               >
                 Create random ephemeral KeyPair{" "}
               </Button>
@@ -426,26 +202,11 @@ function App() {
                 variant="contained"
                 color="error"
                 disabled={!ephemeralKeyPair}
-                onClick={() => {
-                  window.sessionStorage.removeItem(
-                    KEY_PAIR_SESSION_STORAGE_KEY,
-                  );
-                  setEphemeralKeyPair(undefined);
-                }}
+                onClick={clearEphemeralKeyPair}
               >
                 Clear ephemeral KeyPair{" "}
               </Button>
             </Stack>
-            <Typography>
-              <SyntaxHighlighter wrapLongLines language="json" style={oneDark}>
-                {`// PrivateKey
-${JSON.stringify(ephemeralKeyPair?.export())}`}
-              </SyntaxHighlighter>
-              <SyntaxHighlighter wrapLongLines language="json" style={oneDark}>
-                {`// PublicKey:
-${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
-              </SyntaxHighlighter>
-            </Typography>
           </Stack>
         )}
         {/* Step 2 */}
@@ -458,25 +219,23 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                 mb: "12px !important",
               }}
             >
-              {t("4f04f1f8")} (from OpenID Provider)
+              Step 2: Fetch JWT (from OpenID Provider)
             </Typography>
-            <Typography>{t("56adebff")}</Typography>
+            <Typography>Required parameters:</Typography>
             <Stack spacing={1}>
               <Typography>
                 1. {"  "}
-                <code>$CLIENT_ID</code> {t("e062b220")}
+                <code>$CLIENT_ID</code> (Obtained by applying for OpenID
+                Service.)
               </Typography>
               <Typography>
-                2. <code>$REDIRECT_URL</code> {t("ab92f814")}
+                2. <code>$REDIRECT_URL</code> (App Url, configured in OpenID
+                Service)
               </Typography>
               <Typography>
-                3. <code>$NONCE</code>
-                {"  "}
-                <Trans i18nKey={"2397bcd8"}>
-                  （Generated through<code>ephemeralKeyPair</code>
-                  <code>maxEpoch</code>
-                  <code>randomness</code>）
-                </Trans>
+                3. <code>$NONCE</code> (Generated through{" "}
+                <code>ephemeralKeyPair</code>, <code>maxEpoch</code>, and{" "}
+                <code>randomness</code>)
               </Typography>
               <Stack
                 spacing={1}
@@ -485,13 +244,15 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                 }}
               >
                 <Typography>
-                  <code>*ephemeralKeyPair</code>: {t("4274e146")}
+                  <code>*ephemeralKeyPair</code>: Ephemeral key pair generated
+                  in the previous step
                 </Typography>
                 <Typography>
-                  <code>*maxEpoch</code>: {t("bf54d75b")}
+                  <code>*maxEpoch</code>: Validity period of the ephemeral key
+                  pair
                 </Typography>
                 <Typography>
-                  <code>*randomness</code>: {t("4a7add7c")}
+                  <code>*randomness</code>: Randomness
                 </Typography>
               </Stack>
             </Stack>
@@ -505,27 +266,19 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
               <Button
                 variant="contained"
                 size="small"
-                onClick={async () => {
-                  const { epoch } = await suiClient.getLatestSuiSystemState();
-
-                  setCurrentEpoch(epoch);
-                  window.localStorage.setItem(
-                    MAX_EPOCH_LOCAL_STORAGE_KEY,
-                    String(Number(epoch) + 10),
-                  );
-                  setMaxEpoch(Number(epoch) + 10);
-                }}
+                onClick={fetchCurrentEpoch}
               >
-                {t("3a96f638")}
+                {"Fetch current Epoch (via Sui Client)"}
               </Button>
               <Box sx={{ mt: "6px" }}>
-                {t("6d47d563")}{" "}
+                {"Current Epoch:"}{" "}
                 <code>
                   {currentEpoch || "Click the button above to obtain"}
                 </code>
               </Box>
               <Typography sx={{ mt: "6px" }}>
-                {t("6a747813")} <code>maxEpoch:{maxEpoch}</code>
+                {"Assuming the validity period is set to 10 Epochs, then:"}{" "}
+                <code>maxEpoch:{maxEpoch}</code>
               </Typography>
             </Box>
             <Box
@@ -548,16 +301,9 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
               <Button
                 variant="contained"
                 size="small"
-                onClick={() => {
-                  const randomness = generateRandomness();
-                  window.sessionStorage.setItem(
-                    RANDOMNESS_SESSION_STORAGE_KEY,
-                    randomness,
-                  );
-                  setRandomness(randomness);
-                }}
+                onClick={generateRandomnessValue}
               >
-                {t("2e2913c8")}
+                {"Generate randomness"}
               </Button>
               <Typography>
                 <code>randomness: {randomness}</code>
@@ -573,17 +319,7 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                     !currentEpoch ||
                     !randomness
                   }
-                  onClick={() => {
-                    if (!ephemeralKeyPair) {
-                      return;
-                    }
-                    const nonce = generateNonce(
-                      ephemeralKeyPair.getPublicKey(),
-                      maxEpoch,
-                      randomness,
-                    );
-                    setNonce(nonce);
-                  }}
+                  onClick={generateNonceValue}
                 >
                   Generate Nonce
                 </Button>
@@ -634,7 +370,9 @@ ${JSON.stringify(ephemeralKeyPair?.getPublicKey().toBase64())}`}
                 mb: "12px !important",
               }}
             >
-              {t("ef410d70")}
+              {
+                "Step 3: Decode JWT (needed for assembling zkLogin signature later)"
+              }
             </Typography>
             {decodedJwt && (
               <Alert
@@ -675,28 +413,32 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
               }}
             >
               <Typography>
-                <code>iss (issuer)</code>：<b>{t("c20d7af6")}</b>
+                <code>iss (issuer)</code>：<b>{"Issuer"}</b>
               </Typography>
               <Typography>
-                <code>aud (audience)</code>：<b>{t("e9286432")}</b>
+                <code>aud (audience)</code>：<b>{"JWT Consumer (CLIENT_ID)"}</b>
               </Typography>
               <Typography>
-                <code>sub (subject)</code>：<b>{t("0ac23a36")}</b>
+                <code>sub (subject)</code>：
+                <b>{"Subject (user identifier, unique for each user)"}</b>
               </Typography>
               <Typography>
-                <code>nonce</code>：{t("20547967")}
+                <code>nonce</code>：
+                {
+                  "Signature order (values generated by assembling URL parameters earlier)"
+                }
               </Typography>
               <Typography>
-                <code>nbf (Not Before)</code>：{t("060c9525")}
+                <code>nbf (Not Before)</code>：{"Issued At"}
               </Typography>
               <Typography>
-                <code>iat(Issued At)</code>：{t("5bbacff6")}
+                <code>iat(Issued At)</code>：{"Issued Time"}
               </Typography>
               <Typography>
-                <code>exp (expiration time)</code>：{t("3caf36d5")}
+                <code>exp (expiration time)</code>：{"Expiration Time"}
               </Typography>
               <Typography>
-                <code>jti (JWT ID)</code>：{t("64ab7f15")}
+                <code>jti (JWT ID)</code>：{"JWT ID"}
               </Typography>
             </Stack>
           </Box>
@@ -711,23 +453,33 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 mb: "12px !important",
               }}
             >
-              {t("b7c54098")}
+              {"Step 4: Generate User's Salt"}
             </Typography>
-            <Typography>{t("ec71ef53")}</Typography>
+            <Typography>
+              {
+                "User Salt is used to eliminate the one-to-one correspondence between the OAuth identifier (sub) and the on-chain Sui address, avoiding linking Web2 credentials with Web3 credentials."
+              }
+            </Typography>
             <Alert
               severity="warning"
               sx={{
                 fontWeight: 600,
               }}
             >
-              {t("cb63dedd")}
+              {
+                "Therefore, it is essential to safeguard the Salt. If lost, users won't be able to recover the address generated with the current Salt."
+              }
             </Alert>
-            <Trans i18nKey={"c4a666f0"}>
-              <Typography>保存在哪：</Typography>
-              <Typography>1.要求用户记住(发送到用户邮箱)</Typography>
-              <Typography>2.储存在客户端(浏览器)</Typography>
-              <Typography>3.保存在APP Backend数据库，与UID一一对应</Typography>
-            </Trans>
+            <div>
+              <Typography>Where to store:</Typography>
+              <Typography>
+                1. Ask users to remember (send to user's email)
+              </Typography>
+              <Typography>2. Store on client (browser)</Typography>
+              <Typography>
+                3. Save in APP Backend database, mapping one-to-one with UID
+              </Typography>
+            </div>
             <Stack
               direction="row"
               alignItems="center"
@@ -739,14 +491,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
               <Button
                 variant="contained"
                 disabled={Boolean(userSalt)}
-                onClick={() => {
-                  const salt = generateRandomness();
-                  window.localStorage.setItem(
-                    USER_SALT_LOCAL_STORAGE_KEY,
-                    salt,
-                  );
-                  setUserSalt(salt);
-                }}
+                onClick={generateUserSalt}
               >
                 Generate User Salt
               </Button>
@@ -754,12 +499,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 variant="contained"
                 disabled={!userSalt}
                 color="error"
-                onClick={() => {
-                  const salt = generateRandomness();
-                  setUserSalt(salt);
-                  window.localStorage.removeItem(USER_SALT_LOCAL_STORAGE_KEY);
-                  setUserSalt(undefined);
-                }}
+                onClick={deleteUserSalt}
               >
                 Delete User Salt
               </Button>
@@ -779,15 +519,14 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 mb: "12px !important",
               }}
             >
-              {t("2fb333f5")}
+              {"Step 5: Generate User's Sui Address"}
             </Typography>
             <Typography>
-              <Trans i18nKey="e05797f4">
-                用户 Sui 地址由 <code>sub</code> 、 <code>iss</code> 、
-                <code>aud</code> 和 <code>user_salt</code> 共同决定，对于同一个
-                JWT，每次登陆时 <code>sub</code> 、 <code>iss</code> 、
-                <code>aud</code> 都不会变。
-              </Trans>
+              The user's Sui address is determined by <code>sub</code>,{" "}
+              <code>iss</code>,<code>aud</code> and <code>user_salt</code>{" "}
+              together. For the same JWT,
+              <code>sub</code>, <code>iss</code>, and <code>aud</code> will not
+              change each time you log in.
             </Typography>
             <SyntaxHighlighter
               wrapLongLines
@@ -804,15 +543,9 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 disabled={
                   !userSalt || !jwtString || Boolean(zkLoginUserAddress)
                 }
-                onClick={() => {
-                  if (!userSalt) {
-                    return;
-                  }
-                  const zkLoginUserAddress = jwtToAddress(jwtString, userSalt);
-                  setZkLoginUserAddress(zkLoginUserAddress);
-                }}
+                onClick={generateZkLoginAddress}
               >
-                {t("c9bbf457")}
+                {"Generate Sui Address"}
               </Button>
             </Box>
             <Typography
@@ -849,6 +582,7 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 <a
                   href="https://discord.com/channels/916379725201563759/971488439931392130"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   (#Sui official discord)
                 </a>{" "}
@@ -867,10 +601,18 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 mb: "12px !important",
               }}
             >
-              {t("51e8ceeb")}
+              {"Step 6: Fetch ZK Proof (Groth16)"}
             </Typography>
-            <Typography>{t("446760ac")}</Typography>
-            <Typography>{t("c5c9e603")}</Typography>
+            <Typography>
+              {
+                "This is the proof (ZK Proof) for the ephemeral key pair, used to demonstrate the validity of the ephemeral key pair."
+              }
+            </Typography>
+            <Typography>
+              {
+                "1. First, generate the extended ephemeral public key as input for the ZKP."
+              }
+            </Typography>
             <SyntaxHighlighter
               wrapLongLines
               language="typescript"
@@ -885,23 +627,9 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
             <Box>
               <Button
                 variant="contained"
-                onClick={() => {
-                  if (!ephemeralKeyPair) {
-                    return;
-                  }
-                  // extend
-                  const extendedEphemeralPublicKey =
-                    getExtendedEphemeralPublicKey(
-                      ephemeralKeyPair.getPublicKey(),
-                    );
-
-                  console.log("ephemeralKeyPair.getPublicKey():", ephemeralKeyPair)
-                  console.log("extendedEphemeralPublicKey:", extendedEphemeralPublicKey);
-
-                  setExtendedEphemeralPublicKey(extendedEphemeralPublicKey);
-                }}
+                onClick={generateExtendedEphemeralPublicKey}
               >
-                {t("71c429d2")}
+                {"Generate the extended ephemeral public key"}
               </Button>
               <Typography
                 sx={{
@@ -914,7 +642,11 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 )}
               </Typography>
             </Box>
-            <Typography>{t(`16ebd660`)}</Typography>
+            <Typography>
+              {
+                "Use the generated extended ephemeral public key (extendedEphemeralPublicKey) to generate ZK Proof. SUI provides a backend service (or you can run a Docker)."
+              }
+            </Typography>
             <LoadingButton
               loading={fetchingZKProof}
               variant="contained"
@@ -925,44 +657,9 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 !randomness ||
                 !userSalt
               }
-              onClick={async () => {
-                try {
-                  setFetchingZKProof(true);
-                  const zkProofResult = await axios.post(
-                    SUI_PROVER_DEV_ENDPOINT,
-                    {
-                      jwt: oauthParams?.id_token as string,
-                      extendedEphemeralPublicKey: extendedEphemeralPublicKey,
-                      maxEpoch: maxEpoch,
-                      jwtRandomness: randomness,
-                      salt: userSalt,
-                      keyClaimName: "sub",
-                    },
-                    {
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    },
-                  );
-                  setZkProof(zkProofResult.data as PartialZkLoginSignature);
-                  enqueueSnackbar("Successfully obtain ZK Proof", {
-                    variant: "success",
-                  });
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } catch (error: any) {
-                  console.error(error);
-                  enqueueSnackbar(
-                    String(error?.response?.data?.message || error),
-                    {
-                      variant: "error",
-                    },
-                  );
-                } finally {
-                  setFetchingZKProof(false);
-                }
-              }}
+              onClick={fetchZkProof}
             >
-              {t("33893c96")}
+              {"Fetch ZK Proof"}
             </LoadingButton>
             {zkProof && (
               <SyntaxHighlighter
@@ -985,10 +682,18 @@ ${JSON.stringify(decodedJwt, null, 2)}`}
                 mb: "12px !important",
               }}
             >
-              {t("acf1b947")}
+              {"Step 7: Assemble zkLogin signature and submit the transaction"}
             </Typography>
-            <Alert severity="warning">{t("d58c9e1e")}</Alert>
-            <Typography sx={{ mt: "12px" }}>{t("6591b962")}</Typography>
+            <Alert severity="warning">
+              {
+                "Each ZK Proof is associated with an ephemeral key pair. Stored in the appropriate location, it can be reused as proof to sign any number of transactions until the ephemeral key pair expires."
+              }
+            </Alert>
+            <Typography sx={{ mt: "12px" }}>
+              {
+                "Before executing the transaction, please recharge zkLogin with a small amount of SUI as the gas fee for initiating the transaction."
+              }
+            </Typography>
             <div className="card">
               <LoadingButton
                 loading={executingTxn}
