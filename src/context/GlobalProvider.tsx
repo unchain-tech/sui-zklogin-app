@@ -137,6 +137,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     ) {
       setFetchingZKProof(true);
       try {
+        // ZK用のAPIにリクエストを送信してZKProofを生成する
         const zkProofResult = await axios.post(
           SUI_PROVER_DEV_ENDPOINT,
           {
@@ -380,11 +381,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     console.log("ZKLoginAddress:", zkLoginAddress);
     setZkLoginUserAddress(zkLoginAddress);
   };
-
-  /**
-   * 一時鍵ペアから拡張公開鍵を生成
-   * @returns
-   */
 
   /**
    * ZKプルーフを取得
