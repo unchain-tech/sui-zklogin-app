@@ -2,17 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+
 :root {
   font-family: "Montserrat", sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  /* color: rgba(255, 255, 255, 0.87);
-  background-color: #242424; */
-
   color: #213547;
-  background-color: #ffffff;
+  background: linear-gradient(120deg, #e0e7ff 0%, #f0fdfa 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -35,11 +32,45 @@ code {
   border-radius: 4px;
 }
 
+
 body {
   margin: 0;
-  display: flex;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(120deg, #e0e7ff 0%, #f0fdfa 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+  z-index: 1;
+}
+
+body::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  left: -120px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle at 40% 40%, #6366f1 0%, #06b6d4 60%, transparent 100%);
+  opacity: 0.18;
+  z-index: 0;
+}
+
+body::after {
+  content: "";
+  position: absolute;
+  bottom: -120px;
+  right: -120px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle at 60% 60%, #fbbf24 0%, #6366f1 60%, transparent 100%);
+  opacity: 0.13;
+  z-index: 0;
 }
 
 h1 {

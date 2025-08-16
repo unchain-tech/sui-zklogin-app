@@ -35,16 +35,27 @@ export function TransactionExecuteButton({
   executeDigest,
 }: TransactionExecuteButtonProps) {
   return (
-    <Box sx={{ mt: "24px" }}>
+    <Box sx={{ mt: { xs: 2, md: 4 }, textAlign: "center" }}>
       <LoadingButton
         loading={executingTxn}
         variant="contained"
         disabled={!decodedJwt}
+        sx={{
+          px: 4,
+          py: 1.5,
+          fontSize: { xs: "1rem", md: "1.15rem" },
+          fontWeight: 700,
+          borderRadius: 3,
+          boxShadow: "0 2px 12px #6366f133",
+          background: "linear-gradient(90deg, #06b6d4 0%, #6366f1 100%)",
+          color: "#fff",
+          transition: "all 0.2s",
+          ':hover': {
+            background: "linear-gradient(90deg, #6366f1 0%, #06b6d4 100%)",
+            color: "#fff",
+          },
+        }}
         onClick={() => {
-          console.log("ephemeralKeyPair", ephemeralKeyPair);
-          console.log("zkProof", zkProof);
-          console.log("decodedJwt", decodedJwt);
-          console.log("userSalt", userSalt);
           if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
             executeTransaction({
               ephemeralKeyPair,
@@ -56,8 +67,6 @@ export function TransactionExecuteButton({
               setExecutingTxn,
               setExecuteDigest,
             });
-          } else {
-            console.warn("Transaction prerequisites missing");
           }
         }}
       >

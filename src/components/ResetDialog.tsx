@@ -1,10 +1,10 @@
 import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
 } from "@mui/material";
 
 interface ResetDialogProps {
@@ -13,29 +13,48 @@ interface ResetDialogProps {
   onConfirm: () => void;
 }
 
+
 export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>
-        Please confirm if you want to reset the local state?
+    <Dialog
+      open={open}
+      onClose={onClose}
+      PaperProps={{
+        sx: {
+          borderRadius: 4,
+          boxShadow: "0 4px 24px #6366f133",
+          background: "linear-gradient(90deg, #e0e7ff 0%, #f0fdfa 100%)",
+          p: { xs: 2, md: 3 },
+        },
+      }}
+    >
+      <DialogTitle sx={{ fontWeight: 700, fontSize: { xs: "1.1rem", md: "1.25rem" }, color: "#6366f1" }}>
+        Reset Local State
       </DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          Resetting the local state{" "}
-          <span
-            style={{
-              fontWeight: 600,
-            }}
-          >
-            will clear the Salt value
-          </span>{" "}
-          stored in local storage, rendering previously generated addresses
-          irretrievable.
+        <DialogContentText sx={{ fontWeight: 500, color: "#334155", fontSize: { xs: "0.95rem", md: "1.05rem" } }}>
+          <span style={{ fontWeight: 700, color: "#ef4444" }}>Salt</span>（localStorage保存値）をクリアします。<br />
+          以前生成したアドレスは復元できなくなります。<br />
+          本当にリセットしますか？
         </DialogContentText>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={onConfirm}>Confirm</Button>
+      <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 2 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          color="primary"
+          sx={{ borderRadius: 3, px: 3, fontWeight: 600 }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          color="error"
+          sx={{ borderRadius: 3, px: 3, fontWeight: 700, boxShadow: "0 1px 8px #ef444433" }}
+        >
+          Confirm
+        </Button>
       </DialogActions>
     </Dialog>
   );

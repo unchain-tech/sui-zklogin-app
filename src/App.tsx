@@ -34,7 +34,6 @@ function App() {
 
   // useSui hook を使用
   const { executeTransaction } = useSui();
-
   // useZKLogin hook を使用
   const { login } = useZKLogin();
 
