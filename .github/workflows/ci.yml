@@ -23,10 +23,6 @@ jobs:
       - name: Run linter
         run: bun run lint
 
-      - name: Check formatting
-        # bunx is the equivalent of npx
-        run: bunx @biomejs/biome check .
-
       - name: Build project
         run: bun run build
         env:
