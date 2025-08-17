@@ -1,7 +1,7 @@
 import { LoadingButton } from "@mui/lab";
 import { Box } from "@mui/material";
 
-interface TransactionExecuteButtonProps {
+interface NFTMintButtonProps {
   executingTxn: boolean;
   decodedJwt: unknown;
   ephemeralKeyPair: unknown;
@@ -9,17 +9,17 @@ interface TransactionExecuteButtonProps {
   userSalt: unknown;
   zkLoginUserAddress: string;
   maxEpoch: number;
-  executeTransaction: (args: any) => void;
+  mintNFT: (args: any) => void;
   setExecutingTxn: (v: boolean) => void;
   setExecuteDigest: (v: string) => void;
 }
 
 /**
- * TransactionExecuteButton Component
+ * NFTMintButton Component
  * @param param0 - Props for the component
  * @returns JSX.Element
  */
-export function TransactionExecuteButton({
+export function NFTMintButton({
   executingTxn,
   decodedJwt,
   ephemeralKeyPair,
@@ -27,10 +27,10 @@ export function TransactionExecuteButton({
   userSalt,
   zkLoginUserAddress,
   maxEpoch,
-  executeTransaction,
+  mintNFT,
   setExecutingTxn,
-  setExecuteDigest
-}: TransactionExecuteButtonProps) {
+  setExecuteDigest,
+}: NFTMintButtonProps) {
   return (
     <Box sx={{ mt: { xs: 2, md: 4 }, textAlign: "center" }}>
       <LoadingButton
@@ -54,20 +54,23 @@ export function TransactionExecuteButton({
         }}
         onClick={() => {
           if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
-            executeTransaction({
+            mintNFT({
               ephemeralKeyPair,
               zkProof,
               decodedJwt,
               userSalt,
               zkLoginUserAddress,
               maxEpoch,
+              name: "Test NFT",
+              description: "This is a test NFT",
+              imageUrl: "https://example.com/test-nft.png",
               setExecutingTxn,
               setExecuteDigest,
             });
           }
         }}
       >
-        Execute Transaction Block
+        Mint NFT
       </LoadingButton>
     </Box>
   );

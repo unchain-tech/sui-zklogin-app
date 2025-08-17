@@ -166,6 +166,14 @@ const nonce = generateNonce(ephemeralKeyPair.getPublicKey(), maxEpoch, randomnes
 
 ---
 
+## 検証用のスマートコントラクト
+
+### Test NFT
+
+[DEVNET - 0xc0b3c942c105481e797765f3ee9ee7b76e23fc60f2e054e46bafd54d2f9d426b](https://suiscan.xyz/devnet/object/0xc0b3c942c105481e797765f3ee9ee7b76e23fc60f2e054e46bafd54d2f9d426b/contracts)
+
+[Chain IDE](https://chainide.com/s/sui/461d77b23e934de4bad422db11cf3d0d)
+
 ## 参考文献・リソース
 - [A Complete Guide to zkLogin: How it Works and How to Integrate | Sui Network](https://www.youtube.com/watch?v=Jk4mq5IOUYc)
 - [GitHub - polymedia-zklogin-demo](https://github.com/juzybits/polymedia-zklogin-demo?tab=readme-ov-file)

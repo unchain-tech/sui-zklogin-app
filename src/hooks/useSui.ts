@@ -9,6 +9,7 @@ import { enqueueSnackbar } from "notistack";
 import { useCallback } from "react";
 import { suiClient } from "../lib/suiClient";
 import type { PartialZkLoginSignature } from "../types/globalContext";
+import { NFT_PACKAGE_ID } from "../utils/constant";
 
 interface ExecuteTransactionParams {
   ephemeralKeyPair: Ed25519Keypair;
@@ -21,12 +22,25 @@ interface ExecuteTransactionParams {
   setExecuteDigest: (digest: string) => void;
 }
 
+interface MintNFTParams {
+  ephemeralKeyPair: Ed25519Keypair;
+  zkProof: PartialZkLoginSignature;
+  decodedJwt: JwtPayload;
+  userSalt: string;
+  zkLoginUserAddress: string;
+  maxEpoch: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+  setExecutingTxn: (loading: boolean) => void;
+  setExecuteDigest: (digest: string) => void;
+}
+
 /**
  * Sui ブロックチェーンに関するReact Hookをまとめたカスタムフック
  * @returns {Object} - Contains the executeTransaction function
  */
 export function useSui() {
-
   /**
    * 送金用のトランザクションを実行するメソッド
    */
@@ -109,15 +123,117 @@ export function useSui() {
     [],
   );
 
+  /**
+   * NFTをミントするメソッド
+   */
+  const mintNFT = useCallback(async (params: MintNFTParams) => {
+    const {
+      ephemeralKeyPair,
+      zkProof,
+      decodedJwt,
+      userSalt,
+      zkLoginUserAddress,
+      maxEpoch,
+      name,
+      description,
+      imageUrl,
+      setExecutingTxn,
+      setExecuteDigest,
+    } = params;
+
+    try {
+      if (!ephemeralKeyPair || !zkProof || !decodedJwt || !userSalt) {
+        enqueueSnackbar("必要なパラメータが不足しています", {
+          variant: "error",
+        });
+        return;
+      }
+
+      if (!name || !description || !imageUrl) {
+        enqueueSnackbar("NFTの名前、説明、画像URLを入力してください", {
+          variant: "error",
+        });
+        return;
+      }
+
+      setExecutingTxn(true);
+      const txb = new TransactionBlock();
+
+      // NFTをミントする関数を呼び出し
+      txb.moveCall({
+        target: `${NFT_PACKAGE_ID}::testnet_nft::mint_to_sender`,
+        arguments: [
+          txb.pure.string(name),
+          txb.pure.string(description),
+          txb.pure.string(imageUrl),
+        ],
+      });
+
+      txb.setSender(zkLoginUserAddress);
+
+      // トランザクションに署名する
+      const { bytes, signature: userSignature } = await txb.sign({
+        client: suiClient,
+        signer: ephemeralKeyPair,
+      });
+
+      if (!decodedJwt?.sub || !decodedJwt.aud) {
+        enqueueSnackbar("JWT情報が不正です", {
+          variant: "error",
+        });
+        return;
+      }
+
+      const addressSeed: string = genAddressSeed(
+        BigInt(userSalt),
+        "sub",
+        decodedJwt.sub,
+        decodedJwt.aud as string,
+      ).toString();
+
+      // ZKLogin用の署名データを生成する
+      const zkLoginSignature: SerializedSignature = getZkLoginSignature({
+        inputs: {
+          ...zkProof,
+          addressSeed,
+        },
+        maxEpoch,
+        userSignature,
+      });
+
+      // トランザクションを送信する
+      const executeRes = await suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature: zkLoginSignature,
+      });
+
+      enqueueSnackbar(`NFTミントが成功しました: ${executeRes.digest}`, {
+        variant: "success",
+      });
+      setExecuteDigest(executeRes.digest);
+
+      return executeRes;
+    } catch (error) {
+      console.error("NFTミントエラー:", error);
+      enqueueSnackbar(`NFTミントに失敗しました: ${String(error)}`, {
+        variant: "error",
+      });
+      throw error;
+    } finally {
+      setExecutingTxn(false);
+    }
+  }, []);
+
   return {
     executeTransaction,
+    mintNFT,
   };
 }
 
 /**
  * ユーザーの残高を取得するメソッド
- * @param zkLoginUserAddress 
- * @returns 
+ * @param zkLoginUserAddress
+ * @returns
  */
 export function useGetBalance(zkLoginUserAddress: string) {
   const { data: addressBalance, ...rest } = useSuiClientQuery(
@@ -129,4 +245,30 @@ export function useGetBalance(zkLoginUserAddress: string) {
     },
   );
   return { addressBalance, ...rest };
+}
+
+/**
+ * ユーザーが所有するNFTを取得するメソッド
+ */
+export function useGetOwnedNFTs(zkLoginUserAddress: string) {
+  const { data: ownedObjects, ...rest } = useSuiClientQuery(
+    "getOwnedObjects",
+    {
+      owner: zkLoginUserAddress,
+      filter: {
+        StructType: `${NFT_PACKAGE_ID}::testnet_nft::TestnetNFT`,
+      },
+      options: {
+        showContent: true,
+        showDisplay: true,
+        showType: true,
+      },
+    },
+    {
+      enabled: Boolean(zkLoginUserAddress),
+      refetchInterval: 3000,
+    },
+  );
+
+  return { ownedNFTs: ownedObjects?.data || [], ...rest };
 }

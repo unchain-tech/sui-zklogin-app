@@ -2,8 +2,10 @@ import { Box } from "@mui/material";
 import { FaucetLinkButton } from "./components/FaucetLinkButton";
 import { GoogleLoginButton } from "./components/GoogleLoginButton";
 import { Header } from "./components/Header";
+import { NFTMintButton } from "./components/NFTMintButton";
 import { ShowBalance } from "./components/ShowBalance";
 import { TransactionExecuteButton } from "./components/TransactionExecuteButton";
+import { TransactionSuccessAlert } from "./components/TransactionSuccessAlert";
 import { useGlobalContext } from "./hooks/useGlobalContext";
 import { useGetBalance, useSui } from "./hooks/useSui";
 import { useZKLogin } from "./hooks/useZKLogin";
@@ -32,7 +34,7 @@ function App() {
   } = useGlobalContext();
 
   // useSui hook を使用
-  const { executeTransaction } = useSui();
+  const { executeTransaction, mintNFT } = useSui();
   // useZKLogin hook を使用
   const { login } = useZKLogin();
 
@@ -41,9 +43,7 @@ function App() {
       <Header />
       <ShowBalance
         zkLoginUserAddress={zkLoginUserAddress}
-        addressBalance={
-          useGetBalance(zkLoginUserAddress)!.addressBalance
-        }
+        addressBalance={useGetBalance(zkLoginUserAddress)!.addressBalance}
       />
       {zkLoginUserAddress && <FaucetLinkButton />}
       {!zkLoginUserAddress && <GoogleLoginButton login={login} />}
@@ -58,8 +58,20 @@ function App() {
         executeTransaction={executeTransaction}
         setExecutingTxn={setExecutingTxn}
         setExecuteDigest={setExecuteDigest}
-        executeDigest={executeDigest}
       />
+      <NFTMintButton
+        executingTxn={executingTxn}
+        decodedJwt={decodedJwt}
+        ephemeralKeyPair={ephemeralKeyPair}
+        zkProof={zkProof}
+        userSalt={userSalt}
+        zkLoginUserAddress={zkLoginUserAddress}
+        maxEpoch={maxEpoch}
+        mintNFT={mintNFT}
+        setExecutingTxn={setExecutingTxn}
+        setExecuteDigest={setExecuteDigest}
+      />
+      <TransactionSuccessAlert executeDigest={executeDigest} />
     </Box>
   );
 }

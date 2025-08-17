@@ -33,3 +33,7 @@ export const STEPS_DESC = [
   "Transaction signing requires ZK Proof",
   "Submit Transaction",
 ];
+
+// NFTのパッケージID
+export const NFT_PACKAGE_ID =
+  "0xc0b3c942c105481e797765f3ee9ee7b76e23fc60f2e054e46bafd54d2f9d426b";
