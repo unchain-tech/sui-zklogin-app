@@ -1,7 +1,14 @@
-import { Box, Typography } from "@mui/material";
+import { Divider, Stack, Tooltip, Typography } from "@mui/material";
 import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 import { BigNumber } from "bignumber.js";
+import { useSnackbar } from "notistack";
 import { useGetOwnedNFTs } from "../hooks/useSui";
+
+// Helper to shorten the address
+const shortenAddress = (address: string) => {
+  if (!address) return "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
 
 interface ShowBalanceProps {
   zkLoginUserAddress: string;
@@ -14,89 +21,67 @@ export function ShowBalance({
   zkLoginUserAddress,
   addressBalance,
 }: ShowBalanceProps) {
+  const { enqueueSnackbar } = useSnackbar();
+
   if (!zkLoginUserAddress) return null;
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(zkLoginUserAddress);
+    enqueueSnackbar("Copied to clipboard!", { variant: "success" });
+  };
+
   return (
-    <Box
-      sx={{
-        mt: { xs: 2, md: 4 },
-        p: { xs: 2, md: 3 },
-        borderRadius: 4,
-        boxShadow: "0 2px 16px 0 rgba(60,60,120,0.10)",
-        background: "linear-gradient(90deg, #f0fdfa 0%, #e0e7ff 100%)",
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        alignItems: "center",
-        gap: 2,
-        maxWidth: 600,
-        mx: "auto",
-      }}
-    >
-      <Typography
-        sx={{
-          fontFamily: "'Noto Sans Mono', monospace;",
-          fontWeight: 700,
-          fontSize: { xs: "1rem", md: "1.1rem" },
-          color: "#6366f1",
-          letterSpacing: "0.02em",
-          wordBreak: "break-all",
-        }}
-      >
-        {zkLoginUserAddress}
+    <Stack spacing={1}>
+      <Typography variant="body2" color="text.secondary">
+        Your zkLogin Address
       </Typography>
-      {addressBalance && (
+      <Tooltip title="Copy to clipboard" placement="top">
         <Typography
+          onClick={handleCopy}
           sx={{
-            fontWeight: 600,
-            fontSize: { xs: "1rem", md: "1.1rem" },
-            color: "#0ea5e9",
-            ml: { md: 2 },
+            fontFamily: "monospace",
+            fontWeight: "bold",
+            cursor: "pointer",
+            wordBreak: "break-all",
           }}
         >
-          Balance:{" "}
-          {BigNumber(addressBalance?.totalBalance)
-            .div(MIST_PER_SUI.toString())
-            .toFixed(6)}{" "}
-          SUI
+          {shortenAddress(zkLoginUserAddress)}
         </Typography>
+      </Tooltip>
+      <Divider sx={{ my: 1 }} />
+      {addressBalance && (
+        <Stack direction="row" justifyContent="space-between">
+          <Typography variant="body1" color="text.secondary">
+            SUI Balance:
+          </Typography>
+          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+            {BigNumber(addressBalance?.totalBalance)
+              .div(MIST_PER_SUI.toString())
+              .toFixed(4)}{" "}
+            SUI
+          </Typography>
+        </Stack>
       )}
-    </Box>
+    </Stack>
   );
 }
-
-// --- ファイル末尾にNFTBalanceコンポーネントを追加 ---
 
 export function NFTBalance({
   zkLoginUserAddress,
 }: {
   zkLoginUserAddress: string;
 }) {
-  // NFTの残高を取得する
   const { ownedNFTs } = useGetOwnedNFTs(zkLoginUserAddress);
   if (!zkLoginUserAddress) return null;
 
   return (
-    <Box
-      sx={{
-        mt: 1,
-        mb: 1,
-        p: 2,
-        borderRadius: 2,
-        background: "#f5f7ff",
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-      }}
-    >
-      <Typography variant="body2" color="primary">
-        NFT Balance:
+    <Stack direction="row" justifyContent="space-between">
+      <Typography variant="body1" color="text.secondary">
+        Test NFT Balance:
       </Typography>
-      <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-        {ownedNFTs.length}
+      <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+        {ownedNFTs.length} NFT(s)
       </Typography>
-      <Typography variant="body2" color="text.secondary">
-        NFT(s)
-      </Typography>
-    </Box>
+    </Stack>
   );
 }

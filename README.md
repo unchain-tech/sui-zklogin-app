@@ -1,6 +1,8 @@
 
 # Sui zkLogin Demo
 
+![](./docs/0.png)
+
 ## 事前準備
 
 **Google Cloud** でOAuth用のクライアントIDを発行して環境変数にセットすること

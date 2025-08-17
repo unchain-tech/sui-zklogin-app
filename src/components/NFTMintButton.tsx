@@ -1,5 +1,5 @@
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { LoadingButton } from "@mui/lab";
-import { Box } from "@mui/material";
 
 interface NFTMintButtonProps {
   executingTxn: boolean;
@@ -14,11 +14,6 @@ interface NFTMintButtonProps {
   setExecuteDigest: (v: string) => void;
 }
 
-/**
- * NFTMintButton Component
- * @param param0 - Props for the component
- * @returns JSX.Element
- */
 export function NFTMintButton({
   executingTxn,
   decodedJwt,
@@ -32,46 +27,40 @@ export function NFTMintButton({
   setExecuteDigest,
 }: NFTMintButtonProps) {
   return (
-    <Box sx={{ mt: { xs: 2, md: 4 }, textAlign: "center" }}>
-      <LoadingButton
-        loading={executingTxn}
-        variant="contained"
-        disabled={!decodedJwt}
-        sx={{
-          px: 4,
-          py: 1.5,
-          fontSize: { xs: "1rem", md: "1.15rem" },
-          fontWeight: 700,
-          borderRadius: 3,
-          boxShadow: "0 2px 12px #6366f133",
-          background: "linear-gradient(90deg, #06b6d4 0%, #6366f1 100%)",
-          color: "#fff",
-          transition: "all 0.2s",
-          ":hover": {
-            background: "linear-gradient(90deg, #6366f1 0%, #06b6d4 100%)",
-            color: "#fff",
-          },
-        }}
-        onClick={() => {
-          if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
-            mintNFT({
-              ephemeralKeyPair,
-              zkProof,
-              decodedJwt,
-              userSalt,
-              zkLoginUserAddress,
-              maxEpoch,
-              name: "Test NFT",
-              description: "This is a test NFT",
-              imageUrl: "https://example.com/test-nft.png",
-              setExecutingTxn,
-              setExecuteDigest,
-            });
-          }
-        }}
-      >
-        Mint NFT
-      </LoadingButton>
-    </Box>
+    <LoadingButton
+      fullWidth
+      loading={executingTxn}
+      variant="outlined"
+      color="primary"
+      disabled={!decodedJwt}
+      sx={{
+        py: 1.5,
+        fontSize: "1rem",
+        fontWeight: 600,
+        borderRadius: 2,
+        textTransform: "none",
+      }}
+      startIcon={<AutoAwesomeIcon />}
+      onClick={() => {
+        if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
+          mintNFT({
+            ephemeralKeyPair,
+            zkProof,
+            decodedJwt,
+            userSalt,
+            zkLoginUserAddress,
+            maxEpoch,
+            name: "Sui zkLogin NFT",
+            description: "An NFT minted with zkLogin address.",
+            imageUrl:
+              "https://cdn.prod.website-files.com/6425f546844727ce5fb9e5ab/643820c0755b407a0a603863_sui-logo.svg",
+            setExecutingTxn,
+            setExecuteDigest,
+          });
+        }
+      }}
+    >
+      Mint a Test NFT
+    </LoadingButton>
   );
 }
