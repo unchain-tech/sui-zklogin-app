@@ -408,7 +408,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       // enqueueSnackbar("Successfully obtain ZK Proof", {
       //   variant: "success",
       // });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: unknown) {
       console.error(error);
       // enqueueSnackbar(errorMessage, {

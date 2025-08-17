@@ -11,7 +11,7 @@ import { suiClient } from "../lib/suiClient";
 import type { PartialZkLoginSignature } from "../types/globalContext";
 import { NFT_PACKAGE_ID } from "../utils/constant";
 
-interface ExecuteTransactionParams {
+export interface ExecuteTransactionParams {
   ephemeralKeyPair: Ed25519Keypair;
   zkProof: PartialZkLoginSignature;
   decodedJwt: JwtPayload;
@@ -22,7 +22,7 @@ interface ExecuteTransactionParams {
   setExecuteDigest: (digest: string) => void;
 }
 
-interface MintNFTParams {
+export interface MintNFTParams {
   ephemeralKeyPair: Ed25519Keypair;
   zkProof: PartialZkLoginSignature;
   decodedJwt: JwtPayload;

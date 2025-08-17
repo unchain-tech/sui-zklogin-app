@@ -1,15 +1,19 @@
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { LoadingButton } from "@mui/lab";
+import type { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
+import type { JwtPayload } from "jwt-decode";
+import type { MintNFTParams } from "../hooks/useSui";
+import type { PartialZkLoginSignature } from "../types/globalContext";
 
 interface NFTMintButtonProps {
   executingTxn: boolean;
-  decodedJwt: unknown;
-  ephemeralKeyPair: unknown;
-  zkProof: unknown;
-  userSalt: unknown;
+  decodedJwt: JwtPayload | undefined;
+  ephemeralKeyPair: Ed25519Keypair | undefined;
+  zkProof: PartialZkLoginSignature | undefined;
+  userSalt: string | undefined;
   zkLoginUserAddress: string;
   maxEpoch: number;
-  mintNFT: (args: any) => void;
+  mintNFT: (args: MintNFTParams) => void;
   setExecutingTxn: (v: boolean) => void;
   setExecuteDigest: (v: string) => void;
 }
