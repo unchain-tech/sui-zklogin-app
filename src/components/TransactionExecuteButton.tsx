@@ -29,7 +29,7 @@ export function TransactionExecuteButton({
   maxEpoch,
   executeTransaction,
   setExecutingTxn,
-  setExecuteDigest
+  setExecuteDigest,
 }: TransactionExecuteButtonProps) {
   return (
     <Box sx={{ mt: { xs: 2, md: 4 }, textAlign: "center" }}>

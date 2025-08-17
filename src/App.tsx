@@ -1,9 +1,9 @@
 import { Box } from "@mui/material";
+import { NFTBalance, ShowBalance } from "./components/Balance";
 import { FaucetLinkButton } from "./components/FaucetLinkButton";
 import { GoogleLoginButton } from "./components/GoogleLoginButton";
 import { Header } from "./components/Header";
 import { NFTMintButton } from "./components/NFTMintButton";
-import { ShowBalance } from "./components/ShowBalance";
 import { TransactionExecuteButton } from "./components/TransactionExecuteButton";
 import { TransactionSuccessAlert } from "./components/TransactionSuccessAlert";
 import { useGlobalContext } from "./hooks/useGlobalContext";
@@ -43,8 +43,9 @@ function App() {
       <Header />
       <ShowBalance
         zkLoginUserAddress={zkLoginUserAddress}
-        addressBalance={useGetBalance(zkLoginUserAddress)!.addressBalance}
+        addressBalance={useGetBalance(zkLoginUserAddress)?.addressBalance}
       />
+      <NFTBalance zkLoginUserAddress={zkLoginUserAddress} />
       {zkLoginUserAddress && <FaucetLinkButton />}
       {!zkLoginUserAddress && <GoogleLoginButton login={login} />}
       <TransactionExecuteButton

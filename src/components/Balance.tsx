@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import { MIST_PER_SUI } from "@mysten/sui.js/utils";
 import { BigNumber } from "bignumber.js";
+import { useGetOwnedNFTs } from "../hooks/useSui";
 
 interface ShowBalanceProps {
   zkLoginUserAddress: string;
@@ -59,6 +60,43 @@ export function ShowBalance({
           SUI
         </Typography>
       )}
+    </Box>
+  );
+}
+
+// --- ファイル末尾にNFTBalanceコンポーネントを追加 ---
+
+export function NFTBalance({
+  zkLoginUserAddress,
+}: {
+  zkLoginUserAddress: string;
+}) {
+  // NFTの残高を取得する
+  const { ownedNFTs } = useGetOwnedNFTs(zkLoginUserAddress);
+  if (!zkLoginUserAddress) return null;
+
+  return (
+    <Box
+      sx={{
+        mt: 1,
+        mb: 1,
+        p: 2,
+        borderRadius: 2,
+        background: "#f5f7ff",
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
+      <Typography variant="body2" color="primary">
+        NFT Balance:
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+        {ownedNFTs.length}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        NFT(s)
+      </Typography>
     </Box>
   );
 }
