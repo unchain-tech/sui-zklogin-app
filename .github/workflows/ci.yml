@@ -33,14 +33,4 @@ jobs:
           VITE_SUI_DEVNET_FAUCET: https://faucet.devnet.sui.io
           VITE_SUI_PROVER_DEV_ENDPOINT: https://prover-dev.mystenlabs.com/v1
           VITE_REDIRECT_URI: https://mashharuki.github.io/sui-zklogin-demo/
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
         

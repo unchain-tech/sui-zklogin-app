@@ -20,7 +20,7 @@ const { networkConfig } = createNetworkConfig({
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
+  <BrowserRouter basename={import.meta.env.BASE_URL}>
     <ThemeProvider theme={createTheme(ThemeConfig)}>
       <QueryClientProvider client={queryClient}>
         <SuiClientProvider networks={networkConfig} network="devnet">
