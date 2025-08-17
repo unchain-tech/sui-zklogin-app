@@ -31,6 +31,9 @@ jobs:
           VITE_SUI_DEVNET_FAUCET: https://faucet.devnet.sui.io
           VITE_SUI_PROVER_DEV_ENDPOINT: https://prover-dev.mystenlabs.com/v1
 
+      - name: Copy index.html to 404.html
+        run: cp dist/index.html dist/404.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
