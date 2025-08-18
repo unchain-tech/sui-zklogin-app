@@ -227,11 +227,16 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     };
   }, []);
 
-  // zkLoginデータをSupabaseから取得する関数
+  /**
+   * zkLoginデータをSupabaseから取得する関数
+   * @param userId 
+   * @returns 
+   */
   const fetchZkLoginData = async (
     userId: string,
   ): Promise<{ encryptedUserSalt: string; maxEpoch: number } | null> => {
     try {
+      // Supabaseからデータを取得
       const { data, error } = await supabase
         .from("zk_login_data")
         .select("encrypted_user_salt, max_epoch")
@@ -256,12 +261,18 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     }
   };
 
-  // zkLoginデータをSupabaseに保存/更新する関数
+  /**
+   * zkLoginデータをSupabaseに保存/更新する関数
+   * @param userId 
+   * @param encryptedSalt 
+   * @param maxEpoch 
+   */
   const saveZkLoginData = async (
     userId: string,
     encryptedSalt: string,
     maxEpoch: number,
   ) => {
+    // Supabaseからデータを保存/更新
     const { error } = await supabase.from("zk_login_data").upsert(
       {
         id: userId,
@@ -286,7 +297,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setOauthParams(res);
   }, [location]);
 
-  // zkLoginデータの初期化（取得または新規作成）関数
+  /**
+   * zkLoginデータの初期化（取得または新規作成）関数
+   */
   const initializeZkLoginData = useCallback(async (userId: string) => {
     // ここでuser_saltの復号に必要なPIN/パスワードの入力をユーザーに求める
     const userPin = prompt(
@@ -329,7 +342,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     }
   }, []);
 
-  // 既存ユーザーのデータ移行
+  /**
+   * 既存ユーザーの移行関数
+   */
   const migrateFromLocalStorage = useCallback(async (userId: string) => {
     const existingSalt = window.localStorage.getItem("demo_user_salt_key_pair");
     const existingMaxEpoch = window.localStorage.getItem(
@@ -639,8 +654,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     generateNonceValue,
     generateZkLoginAddress,
     generateExtendedEphemeralPublicKey:
-      generateExtendedEphemeralPublicKeyCallback,
+    generateExtendedEphemeralPublicKeyCallback,
     fetchZkProof,
+    initializeZkLoginData
   };
 
   return (

@@ -1,9 +1,9 @@
 import type { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import type { getZkLoginSignature } from "@mysten/zklogin";
+import { Session, User } from "@supabase/supabase-js";
 import type { JwtPayload } from "jwt-decode";
 import type queryString from "query-string";
 import { createContext } from "react";
-import { User, Session } from "@supabase/supabase-js";
 
 // ZK Login用の署名データの型定義
 export type PartialZkLoginSignature = Omit<
@@ -66,6 +66,7 @@ export interface GlobalContextType {
   generateZkLoginAddress: () => void;
   generateExtendedEphemeralPublicKey: () => void;
   fetchZkProof: () => Promise<void>;
+  initializeZkLoginData: (value: string) => Promise<void>;
 }
 
 // Context の作成
