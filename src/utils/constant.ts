@@ -11,9 +11,7 @@ export const SUI_PROVER_DEV_ENDPOINT =
   import.meta.env.VITE_SUI_PROVER_DEV_ENDPOINT ||
   "https://prover-dev.mystenlabs.com/v1";
 export const KEY_PAIR_SESSION_STORAGE_KEY = "demo_ephemeral_key_pair";
-export const USER_SALT_LOCAL_STORAGE_KEY = "demo_user_salt_key_pair";
 export const RANDOMNESS_SESSION_STORAGE_KEY = "demo_randomness_key_pair";
-export const MAX_EPOCH_LOCAL_STORAGE_KEY = "demo_max_epoch_key_pair";
 
 export const STEPS_LABELS = [
   "Generate Ephemeral Key Pair",

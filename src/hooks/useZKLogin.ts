@@ -14,7 +14,6 @@ export function useZKLogin() {
     generateEphemeralKeyPair,
     generateRandomnessValue,
     fetchCurrentEpoch,
-    generateUserSalt,
   } = context;
 
   /**
@@ -24,15 +23,9 @@ export function useZKLogin() {
   const startLogin = useCallback(async () => {
     // Generate essential values for zkLogin
     generateEphemeralKeyPair();
-    fetchCurrentEpoch();
+    await fetchCurrentEpoch();
     generateRandomnessValue();
-    generateUserSalt();
-  }, [
-    generateEphemeralKeyPair,
-    fetchCurrentEpoch,
-    generateRandomnessValue,
-    generateUserSalt,
-  ]);
+  }, [generateEphemeralKeyPair, fetchCurrentEpoch, generateRandomnessValue]);
 
   return {
     startLogin,

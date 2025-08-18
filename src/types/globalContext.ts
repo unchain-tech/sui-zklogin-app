@@ -3,6 +3,7 @@ import type { getZkLoginSignature } from "@mysten/zklogin";
 import type { JwtPayload } from "jwt-decode";
 import type queryString from "query-string";
 import { createContext } from "react";
+import { User, Session } from "@supabase/supabase-js";
 
 // ZK Login用の署名データの型定義
 export type PartialZkLoginSignature = Omit<
@@ -29,6 +30,9 @@ export interface GlobalContextType {
   fetchingZKProof: boolean;
   executingTxn: boolean;
   executeDigest: string;
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
 
   // State setters
   setCurrentEpoch: (value: string) => void;
@@ -47,17 +51,18 @@ export interface GlobalContextType {
   setFetchingZKProof: (value: boolean) => void;
   setExecutingTxn: (value: boolean) => void;
   setExecuteDigest: (value: string) => void;
+  setUser: (value: User | null) => void;
+  setSession: (value: Session | null) => void;
+  setLoading: (value: boolean) => void;
 
   // Methods
   resetState: () => void;
-  resetLocalState: () => void;
+  signOut: () => Promise<void>;
   generateEphemeralKeyPair: () => void;
   clearEphemeralKeyPair: () => void;
   fetchCurrentEpoch: () => Promise<void>;
   generateRandomnessValue: () => void;
   generateNonceValue: () => void;
-  generateUserSalt: () => void;
-  deleteUserSalt: () => void;
   generateZkLoginAddress: () => void;
   generateExtendedEphemeralPublicKey: () => void;
   fetchZkProof: () => Promise<void>;
