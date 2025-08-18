@@ -177,6 +177,8 @@ export function useSui() {
         signer: ephemeralKeyPair,
       });
 
+      console.log("Transaction bytes:", bytes);
+
       if (!decodedJwt?.sub || !decodedJwt.aud) {
         enqueueSnackbar("JWT情報が不正です", {
           variant: "error",
