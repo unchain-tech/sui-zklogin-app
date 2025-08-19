@@ -44,7 +44,9 @@ export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
             fontSize: { xs: "0.95rem", md: "1.05rem" },
           }}
         >
-          <span style={{ fontWeight: 700, color: "#ef4444" }}>ログアウトします</span>
+          <span style={{ fontWeight: 700, color: "#ef4444" }}>
+            ログアウトします
+          </span>
           <br />
           本当にログアウトしますか？
         </DialogContentText>

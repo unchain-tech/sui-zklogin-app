@@ -64,7 +64,7 @@ export function NFTMintButton({
         }
       }}
     >
-      Mint a Test NFT
+      Mint NFT
     </LoadingButton>
   );
 }

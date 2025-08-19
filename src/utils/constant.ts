@@ -32,6 +32,6 @@ export const STEPS_DESC = [
   "Submit Transaction",
 ];
 
-// NFTのパッケージID
+// NFTのパッケージID - 一時的に無効化してテスト用の簡単なオブジェクト作成に変更
 export const NFT_PACKAGE_ID =
-  "0xc0b3c942c105481e797765f3ee9ee7b76e23fc60f2e054e46bafd54d2f9d426b";
+  "0x3f9cd80debc244723ecb3c9748b52be1251130cdc28de545f701c6177520a8d7";

@@ -209,6 +209,8 @@ export function useSui() {
         signature: zkLoginSignature,
       });
 
+      console.log(`NFTミントが成功しました: ${executeRes.digest}`);
+
       enqueueSnackbar(`NFTミントが成功しました: ${executeRes.digest}`, {
         variant: "success",
       });

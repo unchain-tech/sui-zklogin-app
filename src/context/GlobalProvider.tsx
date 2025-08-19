@@ -190,6 +190,16 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   ]);
 
   useEffect(() => {
+    console.log("ZKProof auto-fetch check:", {
+      jwtString: !!jwtString,
+      userSalt: !!userSalt,
+      maxEpoch,
+      ephemeralKeyPair: !!ephemeralKeyPair,
+      extendedEphemeralPublicKey: !!extendedEphemeralPublicKey,
+      randomness: !!randomness,
+      zkProof: !!zkProof,
+    });
+
     if (
       jwtString &&
       userSalt &&
@@ -199,6 +209,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       randomness &&
       !zkProof
     ) {
+      console.log("Triggering ZKProof fetch...");
       fetchZkProofCallback();
     }
   }, [
@@ -229,8 +240,8 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   /**
    * zkLoginデータをSupabaseから取得する関数
-   * @param userId 
-   * @returns 
+   * @param userId
+   * @returns
    */
   const fetchZkLoginData = async (
     userId: string,
@@ -263,9 +274,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   /**
    * zkLoginデータをSupabaseに保存/更新する関数
-   * @param userId 
-   * @param encryptedSalt 
-   * @param maxEpoch 
+   * @param userId
+   * @param encryptedSalt
+   * @param maxEpoch
    */
   const saveZkLoginData = async (
     userId: string,
@@ -416,9 +427,10 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       }
 
       setUserSalt(existingSalt);
+      console.log("Set userSalt from localStorage:", existingSalt);
     };
 
-    if (oauthParams?.id_token && !session) {
+    if (oauthParams?.id_token) {
       // 現在はローカルストレージベースの処理のみを使用
       // Supabase認証は一旦無効化し、データ保存のみに使用
       handleLocalStorageFallback();
@@ -429,7 +441,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       setDecodedJwt(decodedJwt);
       setActiveStep(2);
     }
-  }, [oauthParams, session]);
+  }, [oauthParams]);
 
   // ローカルストレージからの状態復元
   useEffect(() => {
@@ -654,9 +666,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     generateNonceValue,
     generateZkLoginAddress,
     generateExtendedEphemeralPublicKey:
-    generateExtendedEphemeralPublicKeyCallback,
+      generateExtendedEphemeralPublicKeyCallback,
     fetchZkProof,
-    initializeZkLoginData
+    initializeZkLoginData,
   };
 
   return (

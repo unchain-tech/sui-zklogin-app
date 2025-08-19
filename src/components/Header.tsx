@@ -38,8 +38,8 @@ export const Header = () => {
           open={showResetDialog}
           onClose={() => setShowResetDialog(false)}
           onConfirm={() => {
-            signOut()
-            setShowResetDialog(false)
+            signOut();
+            setShowResetDialog(false);
           }}
         />
       </Toolbar>

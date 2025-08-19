@@ -46,6 +46,15 @@ export function TransactionExecuteButton({
       }}
       startIcon={<SendIcon />}
       onClick={() => {
+        console.log("Transaction button clicked. State:", {
+          ephemeralKeyPair: !!ephemeralKeyPair,
+          zkProof: !!zkProof,
+          decodedJwt: !!decodedJwt,
+          userSalt: !!userSalt,
+          zkLoginUserAddress,
+          maxEpoch,
+        });
+
         if (ephemeralKeyPair && zkProof && decodedJwt && userSalt) {
           executeTransaction({
             ephemeralKeyPair,
@@ -57,6 +66,8 @@ export function TransactionExecuteButton({
             setExecutingTxn,
             setExecuteDigest,
           });
+        } else {
+          console.log("Missing required parameters for transaction execution");
         }
       }}
     >
