@@ -34,7 +34,7 @@ export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
           color: "#6366f1",
         }}
       >
-        Reset Local State
+        LogOut
       </DialogTitle>
       <DialogContent>
         <DialogContentText
@@ -44,12 +44,11 @@ export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
             fontSize: { xs: "0.95rem", md: "1.05rem" },
           }}
         >
-          <span style={{ fontWeight: 700, color: "#ef4444" }}>Salt</span>
-          （localStorage保存値）をクリアします。
+          <span style={{ fontWeight: 700, color: "#ef4444" }}>
+            ログアウトします
+          </span>
           <br />
-          以前生成したアドレスは復元できなくなります。
-          <br />
-          本当にリセットしますか？
+          本当にログアウトしますか？
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 2 }}>

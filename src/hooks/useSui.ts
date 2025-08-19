@@ -177,6 +177,8 @@ export function useSui() {
         signer: ephemeralKeyPair,
       });
 
+      console.log("Transaction bytes:", bytes);
+
       if (!decodedJwt?.sub || !decodedJwt.aud) {
         enqueueSnackbar("JWT情報が不正です", {
           variant: "error",
@@ -206,6 +208,8 @@ export function useSui() {
         transactionBlock: bytes,
         signature: zkLoginSignature,
       });
+
+      console.log(`NFTミントが成功しました: ${executeRes.digest}`);
 
       enqueueSnackbar(`NFTミントが成功しました: ${executeRes.digest}`, {
         variant: "success",

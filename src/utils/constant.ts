@@ -11,9 +11,7 @@ export const SUI_PROVER_DEV_ENDPOINT =
   import.meta.env.VITE_SUI_PROVER_DEV_ENDPOINT ||
   "https://prover-dev.mystenlabs.com/v1";
 export const KEY_PAIR_SESSION_STORAGE_KEY = "demo_ephemeral_key_pair";
-export const USER_SALT_LOCAL_STORAGE_KEY = "demo_user_salt_key_pair";
 export const RANDOMNESS_SESSION_STORAGE_KEY = "demo_randomness_key_pair";
-export const MAX_EPOCH_LOCAL_STORAGE_KEY = "demo_max_epoch_key_pair";
 
 export const STEPS_LABELS = [
   "Generate Ephemeral Key Pair",
@@ -34,6 +32,6 @@ export const STEPS_DESC = [
   "Submit Transaction",
 ];
 
-// NFTのパッケージID
+// NFTのパッケージID - 一時的に無効化してテスト用の簡単なオブジェクト作成に変更
 export const NFT_PACKAGE_ID =
-  "0xc0b3c942c105481e797765f3ee9ee7b76e23fc60f2e054e46bafd54d2f9d426b";
+  "0x3f9cd80debc244723ecb3c9748b52be1251130cdc28de545f701c6177520a8d7";

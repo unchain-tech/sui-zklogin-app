@@ -1,11 +1,19 @@
-import { AppBar, Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
+import {
+  AppBar,
+  Box,
+  Button,
+  Chip,
+  Stack,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import { useState } from "react";
 import SuiLogo from "../assets/sui-logo-color.svg";
 import { useGlobalContext } from "../hooks/useGlobalContext";
 import { ResetDialog } from "./../components/ResetDialog";
 
 export const Header = () => {
-  const { resetLocalState } = useGlobalContext();
+  const { signOut } = useGlobalContext();
   const [showResetDialog, setShowResetDialog] = useState(false);
 
   return (
@@ -29,7 +37,10 @@ export const Header = () => {
         <ResetDialog
           open={showResetDialog}
           onClose={() => setShowResetDialog(false)}
-          onConfirm={resetLocalState}
+          onConfirm={() => {
+            signOut();
+            setShowResetDialog(false);
+          }}
         />
       </Toolbar>
     </AppBar>

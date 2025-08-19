@@ -14,7 +14,6 @@ export function useZKLogin() {
     generateEphemeralKeyPair,
     generateRandomnessValue,
     fetchCurrentEpoch,
-    generateUserSalt,
   } = context;
 
   /**
@@ -22,17 +21,11 @@ export function useZKLogin() {
    * The rest of the flow is handled by useEffects in GlobalProvider.
    */
   const startLogin = useCallback(async () => {
-    // Generate essential values for zkLogin
+    // 一時鍵ペア、エポック数取得、ランダムネス生成を行う
     generateEphemeralKeyPair();
-    fetchCurrentEpoch();
+    await fetchCurrentEpoch();
     generateRandomnessValue();
-    generateUserSalt();
-  }, [
-    generateEphemeralKeyPair,
-    fetchCurrentEpoch,
-    generateRandomnessValue,
-    generateUserSalt,
-  ]);
+  }, [generateEphemeralKeyPair, fetchCurrentEpoch, generateRandomnessValue]);
 
   return {
     startLogin,
