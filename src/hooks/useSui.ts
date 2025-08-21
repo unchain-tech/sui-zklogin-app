@@ -84,6 +84,7 @@ export function useSui() {
           return;
         }
 
+        // アドレスシードを生成する
         const addressSeed: string = genAddressSeed(
           BigInt(userSalt),
           "sub",
@@ -91,7 +92,7 @@ export function useSui() {
           decodedJwt.aud as string,
         ).toString();
 
-        // ZKLogin用の署名データを生成する
+        // ZKLoginを利用したトランザクション署名データを生成する
         const zkLoginSignature: SerializedSignature = getZkLoginSignature({
           inputs: {
             ...zkProof,
@@ -171,7 +172,7 @@ export function useSui() {
 
       txb.setSender(zkLoginUserAddress);
 
-      // トランザクションに署名する
+      // 署名済みトランザクションデータを作成する
       const { bytes, signature: userSignature } = await txb.sign({
         client: suiClient,
         signer: ephemeralKeyPair,
@@ -186,6 +187,7 @@ export function useSui() {
         return;
       }
 
+      // アドレスシードを生成する
       const addressSeed: string = genAddressSeed(
         BigInt(userSalt),
         "sub",
@@ -193,7 +195,7 @@ export function useSui() {
         decodedJwt.aud as string,
       ).toString();
 
-      // ZKLogin用の署名データを生成する
+      // ZKLoginを利用したトランザクション署名データを生成する
       const zkLoginSignature: SerializedSignature = getZkLoginSignature({
         inputs: {
           ...zkProof,

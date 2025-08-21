@@ -19,6 +19,9 @@ const { networkConfig } = createNetworkConfig({
 
 const queryClient = new QueryClient();
 
+/**
+ * Main application entry point
+ */
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter basename={import.meta.env.BASE_URL}>
     <ThemeProvider theme={createTheme(ThemeConfig)}>

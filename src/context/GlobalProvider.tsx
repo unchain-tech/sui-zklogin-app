@@ -1,5 +1,4 @@
 import { fromB64 } from "@mysten/bcs";
-import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import {
   generateNonce,
@@ -7,6 +6,7 @@ import {
   getExtendedEphemeralPublicKey,
   jwtToAddress,
 } from "@mysten/zklogin";
+import type { Session, User } from "@supabase/supabase-js";
 import axios from "axios";
 import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
@@ -15,26 +15,19 @@ import queryString from "query-string";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { suiClient } from "../lib/suiClient";
+import { supabase } from "../lib/supabaseClient";
 import type {
   GlobalContextType,
   PartialZkLoginSignature,
 } from "../types/globalContext";
-import {
-  CLIENT_ID,
-  FULLNODE_URL,
-  REDIRECT_URI,
-  SUI_PROVER_DEV_ENDPOINT,
-} from "../utils/constant";
-
-// SuiClient instance
-const suiClient = new SuiClient({ url: FULLNODE_URL });
-
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabaseClient";
 import { GlobalContext } from "../types/globalContext";
 import {
+  CLIENT_ID,
   KEY_PAIR_SESSION_STORAGE_KEY,
   RANDOMNESS_SESSION_STORAGE_KEY,
+  REDIRECT_URI,
+  SUI_PROVER_DEV_ENDPOINT
 } from "../utils/constant";
 import { decrypt, encrypt } from "../utils/crypto";
 
@@ -44,7 +37,7 @@ interface GlobalProviderProps {
 }
 
 /**
- * Global Provider Component
+ * Global Provider コンポーネント
  * zkLogin関連の共通状態とロジックを管理
  */
 export function GlobalProvider({ children }: GlobalProviderProps) {
@@ -67,7 +60,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // 認証状態のローディング
+  const [loading, setLoading] = useState(true);
   const [fetchingZKProof, setFetchingZKProof] = useState(false);
   const [executingTxn, setExecutingTxn] = useState(false);
   const [executeDigest, setExecuteDigest] = useState("");
@@ -91,7 +84,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   // Google OAuthリダイレクト: nonceが生成されたら自動実行
   useEffect(() => {
+    // id_tokenパラメータが含まれているか確認nする。
     const hasIdToken = window.location.hash.includes("id_token=");
+    // 含まれていない場合は / にリダイレクトする
     if (!hasIdToken && nonce && window.location.pathname === "/") {
       const params = new URLSearchParams({
         client_id: CLIENT_ID,
@@ -100,7 +95,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
         scope: "openid",
         nonce: nonce,
       });
+      // ログインURLを生成してリダイレクトする
       const loginURL = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+      // 新しいウィンドウでOAuthプロバイダー側の認証処理を行う。
       window.location.replace(loginURL);
     }
   }, [nonce]);
@@ -108,7 +105,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   // ZKLoginアドレス生成: jwtStringとuserSaltが揃ったら自動生成
   useEffect(() => {
     if (jwtString && userSalt) {
-      // ZKLogin 用のウォレットアドレスを生成
+      // JWTとユーザーソルトを使ってZKLogin 用のウォレットアドレスを生成
       const zkLoginAddress = jwtToAddress(jwtString, userSalt);
       setZkLoginUserAddress(zkLoginAddress);
     }
@@ -153,8 +150,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       randomness
     ) {
       setFetchingZKProof(true);
+
       try {
-        // ZK用のAPIにリクエストを送信してZKProofを生成する
+        // ZK Prover APIにリクエストを送信してZKProofを生成する
         const zkProofResult = await axios.post(
           SUI_PROVER_DEV_ENDPOINT,
           {
@@ -248,6 +246,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   ): Promise<{ encryptedUserSalt: string; maxEpoch: number } | null> => {
     try {
       // Supabaseからデータを取得
+      // ここではユーザーソルトとmaxEpochを取得する
       const { data, error } = await supabase
         .from("zk_login_data")
         .select("encrypted_user_salt, max_epoch")
@@ -324,21 +323,25 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     }
 
     try {
+      // supabaseからユーザーソルトとmaxEpochを取得
       const fetchedData = await fetchZkLoginData(userId);
 
       let currentSalt = "";
-      if (fetchedData?.encryptedUserSalt) {
+      if (fetchedData?.encryptedUserSalt) { // 既存のデータがある場合
         // 復号処理
         currentSalt = await decrypt(fetchedData.encryptedUserSalt, userPin);
         setMaxEpoch(fetchedData.maxEpoch);
-      } else {
-        // 初回ログインまたはデータなしの場合
+      } else { // 初回ログインまたはデータなしの場合
+
+        // ユーザーソルトを新規生成
         currentSalt = generateRandomness();
+        // エポック数を取得
         const { epoch } = await suiClient.getLatestSuiSystemState();
         const newMaxEpoch = Number(epoch) + 10;
 
         // 暗号化処理
         const encryptedNewSalt = await encrypt(currentSalt, userPin);
+        // supabaseに暗号化して保存する
         await saveZkLoginData(userId, encryptedNewSalt, newMaxEpoch);
         setMaxEpoch(newMaxEpoch);
       }
@@ -431,11 +434,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     };
 
     if (oauthParams?.id_token) {
-      // 現在はローカルストレージベースの処理のみを使用
-      // Supabase認証は一旦無効化し、データ保存のみに使用
       handleLocalStorageFallback();
 
-      // ... 既存のJWTデコード処理など
+      // 既存のJWTデコード処理など
       const decodedJwt = jwtDecode(oauthParams.id_token as string);
       setJwtString(oauthParams.id_token as string);
       setDecodedJwt(decodedJwt);

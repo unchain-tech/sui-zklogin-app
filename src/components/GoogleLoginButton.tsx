@@ -5,6 +5,11 @@ interface GoogleLoginButtonProps {
   login: () => void;
 }
 
+/**
+ * GoogloginButton コンポーネント
+ * @param param0 
+ * @returns 
+ */
 export function GoogleLoginButton({ login }: GoogleLoginButtonProps) {
   return (
     <Button

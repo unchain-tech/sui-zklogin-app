@@ -19,6 +19,10 @@ import { useGetBalance, useSui } from "./hooks/useSui";
 import { useZKLogin } from "./hooks/useZKLogin";
 import "./style/App.css";
 
+/**
+ * App コンポーネント
+ * @returns 
+ */
 function App() {
   const {
     zkLoginUserAddress,

@@ -18,6 +18,11 @@ interface TransactionExecuteButtonProps {
   setExecuteDigest: (v: string) => void;
 }
 
+/**
+ * TransactionExecuteButton コンポーネント
+ * @param param0 
+ * @returns 
+ */
 export function TransactionExecuteButton({
   executingTxn,
   decodedJwt,
