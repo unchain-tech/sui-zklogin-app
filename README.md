@@ -26,9 +26,9 @@ VITE_GOOGLE_CLIENT_ID=
 ## supabase でデータベースとテーブルを作成する。
 
 ```sql
--- zk_login_dataテーブルの作成
+-- zk_login_dataテーブルの作成（text型のidを使用）
 CREATE TABLE zk_login_data (
-    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id text PRIMARY KEY,
     encrypted_user_salt text NOT NULL,
     max_epoch integer NOT NULL CHECK (max_epoch > 0),
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -43,30 +43,35 @@ ALTER TABLE zk_login_data ENABLE ROW LEVEL SECURITY;
 
 -- RLSポリシーの設定（ユーザーは自分のデータのみアクセス可能）
 CREATE POLICY "Users can view their own zkLogin data" ON zk_login_data
-    FOR SELECT USING (auth.uid() = id);
+    FOR SELECT USING (auth.uid()::text = id);
 
 CREATE POLICY "Users can insert their own zkLogin data" ON zk_login_data
-    FOR INSERT WITH CHECK (auth.uid() = id);
+    FOR INSERT WITH CHECK (auth.uid()::text = id);
 
 CREATE POLICY "Users can update their own zkLogin data" ON zk_login_data
-    FOR UPDATE USING (auth.uid() = id);
+    FOR UPDATE USING (auth.uid()::text = id);
 
 CREATE POLICY "Users can delete their own zkLogin data" ON zk_login_data
-    FOR DELETE USING (auth.uid() = id);
+    FOR DELETE USING (auth.uid()::text = id);
 
--- updated_atカラムの自動更新トリガー（オプション）
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- updated_atカラムの自動更新関数の作成
+CREATE OR REPLACE FUNCTION update_updated_at_column() 
+RETURNS TRIGGER AS $$ 
 BEGIN
     NEW.updated_at = now();
     RETURN NEW;
-END;
+END; 
 $$ language 'plpgsql';
 
+-- updated_atカラムの自動更新トリガー
 CREATE TRIGGER update_zk_login_data_updated_at
     BEFORE UPDATE ON zk_login_data
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- サンプルデータ挿入（テスト用 - 実際の運用では削除してください）
+-- INSERT INTO zk_login_data (id, encrypted_user_salt, max_epoch) VALUES 
+-- ('user123', 'encrypted_salt_example', 100),
+-- ('user456', 'another_encrypted_salt', 150);
 ```
 
 さらに以下の値の環境変数を設定する
