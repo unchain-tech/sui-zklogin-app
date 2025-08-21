@@ -20,8 +20,8 @@ interface NFTMintButtonProps {
 
 /**
  * NFTミントボタン コンポーネント
- * @param param0 
- * @returns 
+ * @param param0
+ * @returns
  */
 export function NFTMintButton({
   executingTxn,

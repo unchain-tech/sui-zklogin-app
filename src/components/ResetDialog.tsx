@@ -15,8 +15,8 @@ interface ResetDialogProps {
 
 /**
  * ログアウト用のダイアログコンポーネント
- * @param param0 
- * @returns 
+ * @param param0
+ * @returns
  */
 export function ResetDialog({ open, onClose, onConfirm }: ResetDialogProps) {
   return (

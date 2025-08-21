@@ -14,7 +14,7 @@ import { ResetDialog } from "./../components/ResetDialog";
 
 /**
  * ヘッダーコンポーネント
- * @returns 
+ * @returns
  */
 export const Header = () => {
   const { signOut } = useGlobalContext();

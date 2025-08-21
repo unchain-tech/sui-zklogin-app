@@ -7,8 +7,8 @@ interface GoogleLoginButtonProps {
 
 /**
  * GoogloginButton コンポーネント
- * @param param0 
- * @returns 
+ * @param param0
+ * @returns
  */
 export function GoogleLoginButton({ login }: GoogleLoginButtonProps) {
   return (

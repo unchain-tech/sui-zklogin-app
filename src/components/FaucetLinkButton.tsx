@@ -4,7 +4,7 @@ import { SUI_DEVNET_FAUCET } from "../utils/constant";
 
 /**
  * FaucetLinkButton コンポーネント
- * @returns 
+ * @returns
  */
 export function FaucetLinkButton() {
   return (

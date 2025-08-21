@@ -11,11 +11,10 @@ interface ShowBalanceProps {
   };
 }
 
-
 /**
  * Helper to shorten the address method
- * @param address 
- * @returns 
+ * @param address
+ * @returns
  */
 const shortenAddress = (address: string) => {
   if (!address) return "";
@@ -24,8 +23,8 @@ const shortenAddress = (address: string) => {
 
 /**
  * ShowBalance コンポーネント
- * @param param0 
- * @returns 
+ * @param param0
+ * @returns
  */
 export function ShowBalance({
   zkLoginUserAddress,
@@ -81,8 +80,8 @@ export function ShowBalance({
 
 /**
  * NFT Balance コンポーネント
- * @param param0 
- * @returns 
+ * @param param0
+ * @returns
  */
 export function NFTBalance({
   zkLoginUserAddress,

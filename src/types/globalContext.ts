@@ -47,7 +47,6 @@ export interface GlobalContextType {
   setExtendedEphemeralPublicKey: (value: string) => void;
   setMaxEpoch: (value: number) => void;
   setRandomness: (value: string) => void;
-  setActiveStep: (value: number) => void;
   setFetchingZKProof: (value: boolean) => void;
   setExecutingTxn: (value: boolean) => void;
   setExecuteDigest: (value: string) => void;
@@ -65,7 +64,6 @@ export interface GlobalContextType {
   generateNonceValue: () => void;
   generateZkLoginAddress: () => void;
   generateExtendedEphemeralPublicKey: () => void;
-  fetchZkProof: () => Promise<void>;
   initializeZkLoginData: (value: string) => Promise<void>;
 }
 

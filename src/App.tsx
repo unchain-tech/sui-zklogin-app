@@ -21,7 +21,7 @@ import "./style/App.css";
 
 /**
  * App コンポーネント
- * @returns 
+ * @returns
  */
 function App() {
   const {
