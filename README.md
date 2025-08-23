@@ -26,52 +26,44 @@ VITE_GOOGLE_CLIENT_ID=
 ## supabase でデータベースとテーブルを作成する。
 
 ```sql
--- zk_login_dataテーブルの作成（text型のidを使用）
-CREATE TABLE zk_login_data (
-    id text PRIMARY KEY,
-    encrypted_user_salt text NOT NULL,
-    max_epoch integer NOT NULL CHECK (max_epoch > 0),
-    created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+-- ユーザープロフィールを保存するテーブル
+CREATE TABLE profiles (
+  -- auth.usersテーブルのidと連携し、主キーとする
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- Googleから取得するsub ID（重複を許可しない）
+  sub text UNIQUE NOT NULL,
+  name text,
+  email text,
+  user_salt text NOT NULL,
+  max_epoch integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- インデックスの追加（検索性能向上のため）
-CREATE INDEX idx_zk_login_data_user_id ON zk_login_data(id);
+-- インデックスの追加（subカラムでの検索性能向上のため）
+CREATE INDEX idx_profiles_sub ON profiles(sub);
 
 -- Row Level Security (RLS) の有効化
-ALTER TABLE zk_login_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- RLSポリシーの設定（ユーザーは自分のデータのみアクセス可能）
-CREATE POLICY "Users can view their own zkLogin data" ON zk_login_data
-    FOR SELECT USING (auth.uid()::text = id);
-
-CREATE POLICY "Users can insert their own zkLogin data" ON zk_login_data
-    FOR INSERT WITH CHECK (auth.uid()::text = id);
-
-CREATE POLICY "Users can update their own zkLogin data" ON zk_login_data
-    FOR UPDATE USING (auth.uid()::text = id);
-
-CREATE POLICY "Users can delete their own zkLogin data" ON zk_login_data
-    FOR DELETE USING (auth.uid()::text = id);
+-- RLSポリシー: 認証ユーザーは自身のプロフィール情報のみ操作可能
+CREATE POLICY "Users can manage their own profile" ON profiles
+    FOR ALL USING (auth.uid() = id)
+    WITH CHECK (auth.uid() = id);
 
 -- updated_atカラムの自動更新関数の作成
 CREATE OR REPLACE FUNCTION update_updated_at_column() 
-RETURNS TRIGGER AS $$ 
+RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = now();
     RETURN NEW;
-END; 
-$$ language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 -- updated_atカラムの自動更新トリガー
-CREATE TRIGGER update_zk_login_data_updated_at
-    BEFORE UPDATE ON zk_login_data
+CREATE TRIGGER update_profiles_updated_at
+    BEFORE UPDATE ON profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- サンプルデータ挿入（テスト用 - 実際の運用では削除してください）
--- INSERT INTO zk_login_data (id, encrypted_user_salt, max_epoch) VALUES 
--- ('user123', 'encrypted_salt_example', 100),
--- ('user456', 'another_encrypted_salt', 150);
 ```
 
 さらに以下の値の環境変数を設定する
