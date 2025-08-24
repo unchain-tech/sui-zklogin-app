@@ -12,6 +12,10 @@ import SuiLogo from "../assets/sui-logo-color.svg";
 import { useGlobalContext } from "../hooks/useGlobalContext";
 import { ResetDialog } from "./../components/ResetDialog";
 
+/**
+ * ヘッダーコンポーネント
+ * @returns
+ */
 export const Header = () => {
   const { signOut } = useGlobalContext();
   const [showResetDialog, setShowResetDialog] = useState(false);

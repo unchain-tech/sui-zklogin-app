@@ -4,6 +4,11 @@ interface TransactionSuccessAlertProps {
   executeDigest: string;
 }
 
+/**
+ * TransactionSuccessAlert コンポーネント
+ * @param param0
+ * @returns
+ */
 export function TransactionSuccessAlert({
   executeDigest,
 }: TransactionSuccessAlertProps) {

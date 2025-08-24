@@ -2,6 +2,10 @@ import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { Button } from "@mui/material";
 import { SUI_DEVNET_FAUCET } from "../utils/constant";
 
+/**
+ * FaucetLinkButton コンポーネント
+ * @returns
+ */
 export function FaucetLinkButton() {
   return (
     <Button

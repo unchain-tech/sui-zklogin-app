@@ -1,5 +1,3 @@
-import { fromB64 } from "@mysten/bcs";
-import { SuiClient } from "@mysten/sui.js/client";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import {
   generateNonce,
@@ -7,7 +5,9 @@ import {
   getExtendedEphemeralPublicKey,
   jwtToAddress,
 } from "@mysten/zklogin";
+import type { Session, User } from "@supabase/supabase-js";
 import axios from "axios";
+import { Buffer } from "buffer";
 import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
 import { enqueueSnackbar } from "notistack";
@@ -15,28 +15,20 @@ import queryString from "query-string";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { suiClient } from "../lib/suiClient";
+import { supabase } from "../lib/supabaseClient";
 import type {
   GlobalContextType,
   PartialZkLoginSignature,
 } from "../types/globalContext";
+import { GlobalContext } from "../types/globalContext";
 import {
   CLIENT_ID,
-  FULLNODE_URL,
+  KEY_PAIR_SESSION_STORAGE_KEY,
+  RANDOMNESS_SESSION_STORAGE_KEY,
   REDIRECT_URI,
   SUI_PROVER_DEV_ENDPOINT,
 } from "../utils/constant";
-
-// SuiClient instance
-const suiClient = new SuiClient({ url: FULLNODE_URL });
-
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabaseClient";
-import { GlobalContext } from "../types/globalContext";
-import {
-  KEY_PAIR_SESSION_STORAGE_KEY,
-  RANDOMNESS_SESSION_STORAGE_KEY,
-} from "../utils/constant";
-import { decrypt, encrypt } from "../utils/crypto";
 
 // Provider Props の型定義
 interface GlobalProviderProps {
@@ -44,7 +36,7 @@ interface GlobalProviderProps {
 }
 
 /**
- * Global Provider Component
+ * Global Provider コンポーネント
  * zkLogin関連の共通状態とロジックを管理
  */
 export function GlobalProvider({ children }: GlobalProviderProps) {
@@ -63,17 +55,35 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     useState("");
   const [maxEpoch, setMaxEpoch] = useState(0);
   const [randomness, setRandomness] = useState("");
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, ] = useState(0);
 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true); // 認証状態のローディング
+  const [loading, setLoading] = useState(true);
   const [fetchingZKProof, setFetchingZKProof] = useState(false);
   const [executingTxn, setExecutingTxn] = useState(false);
   const [executeDigest, setExecuteDigest] = useState("");
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const keypairFromSession = window.sessionStorage.getItem(
+      KEY_PAIR_SESSION_STORAGE_KEY,
+    );
+    if (keypairFromSession) {
+      const secretKey = Buffer.from(keypairFromSession, "base64");
+      const newEphemeralKeyPair = Ed25519Keypair.fromSecretKey(secretKey);
+      setEphemeralKeyPair(newEphemeralKeyPair);
+    }
+
+    const randomnessFromSession = window.sessionStorage.getItem(
+      RANDOMNESS_SESSION_STORAGE_KEY,
+    );
+    if (randomnessFromSession) {
+      setRandomness(randomnessFromSession);
+    }
+  }, []);
 
   // nonce生成: 鍵ペア・maxEpoch・randomnessが揃ったら自動生成
   useEffect(() => {
@@ -91,7 +101,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   // Google OAuthリダイレクト: nonceが生成されたら自動実行
   useEffect(() => {
+    // id_tokenパラメータが含まれているか確認nする。
     const hasIdToken = window.location.hash.includes("id_token=");
+    // 含まれていない場合は / にリダイレクトする
     if (!hasIdToken && nonce && window.location.pathname === "/") {
       const params = new URLSearchParams({
         client_id: CLIENT_ID,
@@ -100,7 +112,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
         scope: "openid",
         nonce: nonce,
       });
+      // ログインURLを生成してリダイレクトする
       const loginURL = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+      // 新しいウィンドウでOAuthプロバイダー側の認証処理を行う。
       window.location.replace(loginURL);
     }
   }, [nonce]);
@@ -108,7 +122,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   // ZKLoginアドレス生成: jwtStringとuserSaltが揃ったら自動生成
   useEffect(() => {
     if (jwtString && userSalt) {
-      // ZKLogin 用のウォレットアドレスを生成
+      // JWTとユーザーソルトを使ってZKLogin 用のウォレットアドレスを生成
       const zkLoginAddress = jwtToAddress(jwtString, userSalt);
       setZkLoginUserAddress(zkLoginAddress);
     }
@@ -153,8 +167,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       randomness
     ) {
       setFetchingZKProof(true);
+
       try {
-        // ZK用のAPIにリクエストを送信してZKProofを生成する
+        // ZK Prover APIにリクエストを送信してZKProofを生成する
         const zkProofResult = await axios.post(
           SUI_PROVER_DEV_ENDPOINT,
           {
@@ -243,55 +258,22 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * @param userId
    * @returns
    */
-  const fetchZkLoginData = async (
+  const saveZkLoginData = useCallback(async (
     userId: string,
-  ): Promise<{ encryptedUserSalt: string; maxEpoch: number } | null> => {
-    try {
-      // Supabaseからデータを取得
-      const { data, error } = await supabase
-        .from("zk_login_data")
-        .select("encrypted_user_salt, max_epoch")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        if (error.code === "PGRST116") {
-          // データなし
-          return null;
-        }
-        throw new Error(`Database error: ${error.message}`);
-      }
-
-      return {
-        encryptedUserSalt: data.encrypted_user_salt,
-        maxEpoch: data.max_epoch,
-      };
-    } catch (error) {
-      console.error("Failed to fetch zkLogin data:", error);
-      throw error; // エラーを再スローして呼び出し元で処理
-    }
-  };
-
-  /**
-   * zkLoginデータをSupabaseに保存/更新する関数
-   * @param userId
-   * @param encryptedSalt
-   * @param maxEpoch
-   */
-  const saveZkLoginData = async (
-    userId: string,
-    encryptedSalt: string,
+    userSalt: string,
     maxEpoch: number,
   ) => {
-    // Supabaseからデータを保存/更新
-    const { error } = await supabase.from("zk_login_data").upsert(
+    console.log("zkLoginデータをSupabaseに保存/更新する関数開始")
+    // Supabaseにデータを保存/更新
+    const { error } = await supabase.from("profiles").upsert(
       {
-        id: userId,
-        encrypted_user_salt: encryptedSalt,
+        id: crypto.randomUUID(),
+        sub: userId,
+        user_salt: userSalt,
         max_epoch: maxEpoch,
       },
       {
-        onConflict: "id",
+        onConflict: "sub",
         ignoreDuplicates: false,
       },
     );
@@ -300,7 +282,52 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       console.error("Failed to save zkLogin data:", error);
       throw new Error(`Failed to save zkLogin data: ${error.message}`);
     }
-  };
+  }, []);
+
+  /**
+   * zkLoginデータをSupabaseから取得する関数
+   * @param userId
+   * @returns
+   */
+  const fetchZkLoginData = useCallback(async (
+    userId: string,
+  ): Promise<{ user_salt: string; max_epoch: number } | null> => {
+    try {
+      console.log("supabaseへの登録処理開始")
+      // Supabaseからデータを取得
+      // ここではユーザーソルトとmaxEpochを取得する
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_salt, max_epoch")
+        .eq("sub", userId)
+        .single();
+
+      console.log("Fetched zkLogin data:", data);
+
+      // データを取得できなかった場合は新規に登録する
+      if (!data) {
+        const { epoch } = await suiClient.getLatestSuiSystemState();
+        const newMaxEpoch = Number(epoch) + 10;
+        const newUserSalt = generateRandomness();
+        // supabase側にデータを登録する
+        await saveZkLoginData(userId, newUserSalt, newMaxEpoch);
+        return { user_salt: newUserSalt, max_epoch: newMaxEpoch };
+      }
+
+      if (error) {
+        if (error === "PGRST116") {
+          // データなし
+          return null;
+        }
+        throw new Error(`Database error: ${error}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Failed to fetch zkLogin data:", error);
+      throw error; 
+    }
+  }, [saveZkLoginData]);
 
   // Location の監視（OAuth パラメータの取得）
   useEffect(() => {
@@ -308,167 +335,57 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setOauthParams(res);
   }, [location]);
 
-  /**
-   * zkLoginデータの初期化（取得または新規作成）関数
-   */
-  const initializeZkLoginData = useCallback(async (userId: string) => {
-    // ここでuser_saltの復号に必要なPIN/パスワードの入力をユーザーに求める
-    const userPin = prompt(
-      "Please enter your PIN to decrypt your zkLogin data:",
-    );
-    if (!userPin) {
-      enqueueSnackbar("PIN is required to access zkLogin data.", {
-        variant: "error",
-      });
-      return;
-    }
-
-    try {
-      const fetchedData = await fetchZkLoginData(userId);
-
-      let currentSalt = "";
-      if (fetchedData?.encryptedUserSalt) {
-        // 復号処理
-        currentSalt = await decrypt(fetchedData.encryptedUserSalt, userPin);
-        setMaxEpoch(fetchedData.maxEpoch);
-      } else {
-        // 初回ログインまたはデータなしの場合
-        currentSalt = generateRandomness();
-        const { epoch } = await suiClient.getLatestSuiSystemState();
-        const newMaxEpoch = Number(epoch) + 10;
-
-        // 暗号化処理
-        const encryptedNewSalt = await encrypt(currentSalt, userPin);
-        await saveZkLoginData(userId, encryptedNewSalt, newMaxEpoch);
-        setMaxEpoch(newMaxEpoch);
-      }
-      setUserSalt(currentSalt);
-    } catch (error) {
-      console.error("Failed to initialize zkLogin data:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      enqueueSnackbar(`Failed to initialize zkLogin data: ${errorMessage}`, {
-        variant: "error",
-      });
-    }
-  }, []);
-
-  /**
-   * 既存ユーザーの移行関数
-   */
-  const migrateFromLocalStorage = useCallback(async (userId: string) => {
-    const existingSalt = window.localStorage.getItem("demo_user_salt_key_pair");
-    const existingMaxEpoch = window.localStorage.getItem(
-      "demo_max_epoch_key_pair",
-    );
-
-    if (existingSalt && existingMaxEpoch) {
-      // ユーザーにPIN/パスワードの入力を求め、既存のsaltを暗号化
-      const userPin = prompt(
-        "Existing zkLogin data found. Please enter a PIN to encrypt and migrate your data:",
-      );
-      if (!userPin) {
-        enqueueSnackbar("PIN is required to migrate existing data.", {
-          variant: "warning",
-        });
-        return;
-      }
-
+  // JWT トークンの処理
+  useEffect(() => {
+    const initializeZkLoginData = async (userId: string) => {
       try {
-        const encryptedSalt = await encrypt(existingSalt, userPin);
-        await saveZkLoginData(
-          userId,
-          encryptedSalt,
-          parseInt(existingMaxEpoch, 10),
-        );
-
-        // 移行成功後、ローカルストレージをクリア
-        window.localStorage.removeItem("demo_user_salt_key_pair");
-        window.localStorage.removeItem("demo_max_epoch_key_pair");
-        enqueueSnackbar("Existing zkLogin data migrated successfully!", {
-          variant: "success",
-        });
+        // supabaseからユーザーソルトとmaxEpochを取得
+        const fetchedData = await fetchZkLoginData(userId);
+  
+        let currentSalt = "";
+        if (fetchedData?.user_salt) {
+          // 既存のデータがある場合
+          currentSalt = fetchedData.user_salt;
+          setMaxEpoch(fetchedData.max_epoch);
+        } else {
+          // 初回ログインまたはデータなしの場合
+  
+          // ユーザーソルトを新規生成
+          currentSalt = generateRandomness();
+          // エポック数を取得
+          const { epoch } = await suiClient.getLatestSuiSystemState();
+          const newMaxEpoch = Number(epoch) + 10;
+  
+          // supabaseに保存する
+          await saveZkLoginData(userId, currentSalt, newMaxEpoch);
+          setMaxEpoch(newMaxEpoch);
+        }
+        setUserSalt(currentSalt);
       } catch (error) {
-        console.error("Failed to migrate existing data:", error);
+        console.error("Failed to initialize zkLogin data:", error);
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        enqueueSnackbar(`Failed to migrate existing data: ${errorMessage}`, {
+        enqueueSnackbar(`Failed to initialize zkLogin data: ${errorMessage}`, {
           variant: "error",
         });
       }
     }
-  }, []);
-
-  // JWT トークンの処理
-  useEffect(() => {
-    const handleLocalStorageFallback = async () => {
-      // 従来のローカルストレージベースの処理
-      let existingSalt = window.localStorage.getItem("demo_user_salt_key_pair");
-      let existingMaxEpoch = window.localStorage.getItem(
-        "demo_max_epoch_key_pair",
-      );
-
-      if (!existingSalt) {
-        // 初回ログイン: 新しいsaltを生成
-        existingSalt = generateRandomness();
-        window.localStorage.setItem("demo_user_salt_key_pair", existingSalt);
-
-        // 現在のエポックを取得してmaxEpochを設定
-        const { epoch } = await suiClient.getLatestSuiSystemState();
-        const newMaxEpoch = Number(epoch) + 10;
-        existingMaxEpoch = newMaxEpoch.toString();
-        window.localStorage.setItem(
-          "demo_max_epoch_key_pair",
-          existingMaxEpoch,
-        );
-        setMaxEpoch(newMaxEpoch);
-      } else {
-        setMaxEpoch(parseInt(existingMaxEpoch || "0", 10));
-      }
-
-      setUserSalt(existingSalt);
-      console.log("Set userSalt from localStorage:", existingSalt);
-    };
 
     if (oauthParams?.id_token) {
-      // 現在はローカルストレージベースの処理のみを使用
-      // Supabase認証は一旦無効化し、データ保存のみに使用
-      handleLocalStorageFallback();
 
-      // ... 既存のJWTデコード処理など
+      // 既存のJWTデコード処理など
       const decodedJwt = jwtDecode(oauthParams.id_token as string);
       setJwtString(oauthParams.id_token as string);
       setDecodedJwt(decodedJwt);
-      setActiveStep(2);
-    }
-  }, [oauthParams]);
 
-  // ローカルストレージからの状態復元
-  useEffect(() => {
-    const privateKey = window.sessionStorage.getItem(
-      KEY_PAIR_SESSION_STORAGE_KEY,
-    );
-    if (privateKey) {
-      const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(
-        fromB64(privateKey),
-      );
-      setEphemeralKeyPair(ephemeralKeyPair);
-    }
+      console.log("Decoded JWT:", decodedJwt);
 
-    const savedRandomness = window.sessionStorage.getItem(
-      RANDOMNESS_SESSION_STORAGE_KEY,
-    );
-    if (savedRandomness) {
-      setRandomness(savedRandomness);
+      // supabaseへ認証情報を保管する
+      if (decodedJwt.sub) {
+        initializeZkLoginData(decodedJwt.sub);
+      }
     }
-  }, []);
-
-  // アプリケーションの初期ロード時、またはユーザー認証後に一度だけ呼び出す
-  useEffect(() => {
-    if (user) {
-      migrateFromLocalStorage(user.id);
-    }
-  }, [user, migrateFromLocalStorage]);
+  }, [oauthParams, fetchZkLoginData, saveZkLoginData]);
 
   // Methods
   const resetState = () => {
@@ -484,7 +401,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setExtendedEphemeralPublicKey("");
     setMaxEpoch(0);
     setRandomness("");
-    setActiveStep(0);
+    (0);
     setFetchingZKProof(false);
     setExecutingTxn(false);
     setExecuteDigest("");
@@ -577,42 +494,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setZkLoginUserAddress(zkLoginAddress);
   };
 
-  /**
-   * ZKプルーフを取得
-   */
-  const fetchZkProof = async () => {
-    try {
-      setFetchingZKProof(true);
-      const zkProofResult = await axios.post(
-        SUI_PROVER_DEV_ENDPOINT,
-        {
-          jwt: oauthParams?.id_token as string,
-          extendedEphemeralPublicKey: extendedEphemeralPublicKey,
-          maxEpoch: maxEpoch,
-          jwtRandomness: randomness,
-          salt: userSalt,
-          keyClaimName: "sub",
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      setZkProof(zkProofResult.data as PartialZkLoginSignature);
-      // enqueueSnackbar("Successfully obtain ZK Proof", {
-      //   variant: "success",
-      // });
-    } catch (error: unknown) {
-      console.error(error);
-      // enqueueSnackbar(errorMessage, {
-      //   variant: "error",
-      // });
-    } finally {
-      setFetchingZKProof(false);
-    }
-  };
-
   const contextValue: GlobalContextType = {
     // State
     currentEpoch,
@@ -648,7 +529,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setExtendedEphemeralPublicKey,
     setMaxEpoch,
     setRandomness,
-    setActiveStep,
     setFetchingZKProof,
     setExecutingTxn,
     setExecuteDigest,
@@ -666,9 +546,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     generateNonceValue,
     generateZkLoginAddress,
     generateExtendedEphemeralPublicKey:
-      generateExtendedEphemeralPublicKeyCallback,
-    fetchZkProof,
-    initializeZkLoginData,
+    generateExtendedEphemeralPublicKeyCallback,
   };
 
   return (

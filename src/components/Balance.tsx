@@ -4,12 +4,6 @@ import { BigNumber } from "bignumber.js";
 import { useSnackbar } from "notistack";
 import { useGetOwnedNFTs } from "../hooks/useSui";
 
-// Helper to shorten the address
-const shortenAddress = (address: string) => {
-  if (!address) return "";
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-};
-
 interface ShowBalanceProps {
   zkLoginUserAddress: string;
   addressBalance?: {
@@ -17,6 +11,21 @@ interface ShowBalanceProps {
   };
 }
 
+/**
+ * Helper to shorten the address method
+ * @param address
+ * @returns
+ */
+const shortenAddress = (address: string) => {
+  if (!address) return "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+/**
+ * ShowBalance コンポーネント
+ * @param param0
+ * @returns
+ */
 export function ShowBalance({
   zkLoginUserAddress,
   addressBalance,
@@ -25,6 +34,9 @@ export function ShowBalance({
 
   if (!zkLoginUserAddress) return null;
 
+  /**
+   * ウォレットアドレスをクリップボードにコピーするメソッド
+   */
   const handleCopy = () => {
     navigator.clipboard.writeText(zkLoginUserAddress);
     enqueueSnackbar("Copied to clipboard!", { variant: "success" });
@@ -66,11 +78,17 @@ export function ShowBalance({
   );
 }
 
+/**
+ * NFT Balance コンポーネント
+ * @param param0
+ * @returns
+ */
 export function NFTBalance({
   zkLoginUserAddress,
 }: {
   zkLoginUserAddress: string;
 }) {
+  // NFTの残高を取得する
   const { ownedNFTs } = useGetOwnedNFTs(zkLoginUserAddress);
   if (!zkLoginUserAddress) return null;
 

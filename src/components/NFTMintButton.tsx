@@ -18,6 +18,11 @@ interface NFTMintButtonProps {
   setExecuteDigest: (v: string) => void;
 }
 
+/**
+ * NFTミントボタン コンポーネント
+ * @param param0
+ * @returns
+ */
 export function NFTMintButton({
   executingTxn,
   decodedJwt,
