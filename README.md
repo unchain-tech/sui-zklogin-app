@@ -92,6 +92,32 @@ VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
   export const NFT_PACKAGE_ID=<ここに設定>
   ```
 
+## 動かし方
+
+- **インストール**
+
+   ```bash
+   bun i
+   ```
+
+- **ビルド**
+
+   ```bash
+   bun run build
+   ```
+
+- **起動**
+
+   ```bash
+   bun run dev
+   ```
+
+- **フォーマッター適用(オプション)**
+
+   ```bash
+   bun run format
+   ```
+
 ## 主要機能
 
 - zkLogin認証機能
