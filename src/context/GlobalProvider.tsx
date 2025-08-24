@@ -67,7 +67,66 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  /**
+   * 一時的な鍵ペアを生成するメソッド
+   */
+  const generateEphemeralKeyPair = () => {
+    const newEphemeralKeyPair = Ed25519Keypair.generate();
+    // リダイレクト後にも保持するためにセッションストレージに保管
+    window.sessionStorage.setItem(
+      KEY_PAIR_SESSION_STORAGE_KEY,
+      newEphemeralKeyPair.export().privateKey,
+    );
+    setEphemeralKeyPair(newEphemeralKeyPair);
+  };
+
+  /**
+   * 一時的な鍵ペアをクリアするメソッド
+   */
+  const clearEphemeralKeyPair = () => {
+    window.sessionStorage.removeItem(KEY_PAIR_SESSION_STORAGE_KEY);
+    setEphemeralKeyPair(undefined);
+  };
+
+  /**
+   * 現在のエポックを取得するメソッド
+   */
+  const fetchCurrentEpoch = async () => {
+    // Sui ClientのgetLatestSuiSystemStateメソッドを呼び出す
+    const { epoch } = await suiClient.getLatestSuiSystemState();
+    setCurrentEpoch(epoch);
+    setMaxEpoch(Number(epoch) + 10);
+  };
+
+  /**
+   * ランダムネス値を生成するメソッド
+   */
+  const generateRandomnessValue = () => {
+    const newRandomness = generateRandomness();
+    // リダイレクト後にも保持するためにセッションストレージに保管
+    window.sessionStorage.setItem(
+      RANDOMNESS_SESSION_STORAGE_KEY,
+      newRandomness,
+    );
+    setRandomness(newRandomness);
+  };
+
+  /**
+   * ナンス値を生成するメソッド
+   * @returns
+   */
+  const generateNonceValue = () => {
+    if (!ephemeralKeyPair) return;
+    const newNonce = generateNonce(
+      ephemeralKeyPair.getPublicKey(),
+      maxEpoch,
+      randomness,
+    );
+    setNonce(newNonce);
+  };
+
   useEffect(() => {
+    // セッションストレージから一時鍵ペアのデータを取得
     const keypairFromSession = window.sessionStorage.getItem(
       KEY_PAIR_SESSION_STORAGE_KEY,
     );
@@ -77,6 +136,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       setEphemeralKeyPair(newEphemeralKeyPair);
     }
 
+    // セッションストレージからランダムネスの値を取得する
     const randomnessFromSession = window.sessionStorage.getItem(
       RANDOMNESS_SESSION_STORAGE_KEY,
     );
@@ -254,7 +314,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   }, []);
 
   /**
-   * zkLoginデータをSupabaseから取得する関数
+   * zkLoginデータをSupabaseに保存する関数
    * @param userId
    * @returns
    */
@@ -339,6 +399,10 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   // JWT トークンの処理
   useEffect(() => {
+    /**
+     * zkLoginの認証処理に必要なデータを処理するためのメソッド
+     * @param userId
+     */
     const initializeZkLoginData = async (userId: string) => {
       try {
         // supabaseからユーザーソルトとmaxEpochを取得
@@ -350,8 +414,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
           currentSalt = fetchedData.user_salt;
           setMaxEpoch(fetchedData.max_epoch);
         } else {
-          // 初回ログインまたはデータなしの場合
-
           // ユーザーソルトを新規生成
           currentSalt = generateRandomness();
           // エポック数を取得
@@ -383,12 +445,15 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
       // supabaseへ認証情報を保管する
       if (decodedJwt.sub) {
+        // initializeZkLoginDataメソッドを呼び出す(zkLoginの認証処理に必要なデータを取得/保存する - Supabaseと連携)。
         initializeZkLoginData(decodedJwt.sub);
       }
     }
   }, [oauthParams, fetchZkLoginData, saveZkLoginData]);
 
-  // Methods
+  /**
+   * ログアウトしてステート変数の値をリセットするメソッド
+   */
   const resetState = () => {
     setCurrentEpoch("");
     setNonce("");
@@ -412,13 +477,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * signOutするための関数
    */
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Sign out error", error);
-      enqueueSnackbar(`Sign out failed: ${error.message}`, {
-        variant: "error",
-      });
-    }
     // stateのリセット
     resetState();
     // sessionStorageのクリア
@@ -427,63 +485,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
   };
 
   /**
-   * 一時的な鍵ペアを生成
-   */
-  const generateEphemeralKeyPair = () => {
-    const newEphemeralKeyPair = Ed25519Keypair.generate();
-    window.sessionStorage.setItem(
-      KEY_PAIR_SESSION_STORAGE_KEY,
-      newEphemeralKeyPair.export().privateKey,
-    );
-    setEphemeralKeyPair(newEphemeralKeyPair);
-  };
-
-  /**
-   * 一時的な鍵ペアをクリア
-   */
-  const clearEphemeralKeyPair = () => {
-    window.sessionStorage.removeItem(KEY_PAIR_SESSION_STORAGE_KEY);
-    setEphemeralKeyPair(undefined);
-  };
-
-  /**
-   * 現在のエポックを取得
-   */
-  const fetchCurrentEpoch = async () => {
-    // Sui ClientのgetLatestSuiSystemStateメソッドを呼び出す
-    const { epoch } = await suiClient.getLatestSuiSystemState();
-    setCurrentEpoch(epoch);
-    setMaxEpoch(Number(epoch) + 10);
-  };
-
-  /**
-   * ランダムネス値を生成
-   */
-  const generateRandomnessValue = () => {
-    const newRandomness = generateRandomness();
-    window.sessionStorage.setItem(
-      RANDOMNESS_SESSION_STORAGE_KEY,
-      newRandomness,
-    );
-    setRandomness(newRandomness);
-  };
-
-  /**
-   * ナンス値を生成
-   * @returns
-   */
-  const generateNonceValue = () => {
-    if (!ephemeralKeyPair) return;
-    const newNonce = generateNonce(
-      ephemeralKeyPair.getPublicKey(),
-      maxEpoch,
-      randomness,
-    );
-    setNonce(newNonce);
-  };
-
-  /**
-   * JWTからウォレットアドレレスを生成s
+   * JWTからウォレットアドレレスを生成するメソッド
    * @returns
    */
   const generateZkLoginAddress = () => {
@@ -495,6 +497,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setZkLoginUserAddress(zkLoginAddress);
   };
 
+  // GlobalContextProviderから提供する変数・メソッド一覧を定義
   const contextValue: GlobalContextType = {
     // State
     currentEpoch,

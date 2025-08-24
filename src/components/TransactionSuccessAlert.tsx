@@ -1,17 +1,14 @@
 import { Alert, Typography } from "@mui/material";
-
-interface TransactionSuccessAlertProps {
-  executeDigest: string;
-}
+import { useGlobalContext } from "../hooks/useGlobalContext";
 
 /**
  * TransactionSuccessAlert コンポーネント
  * @param param0
  * @returns
  */
-export function TransactionSuccessAlert({
-  executeDigest,
-}: TransactionSuccessAlertProps) {
+export function TransactionSuccessAlert() {
+  const { executeDigest } = useGlobalContext();
+
   if (!executeDigest) {
     return null;
   }
@@ -43,7 +40,7 @@ export function TransactionSuccessAlert({
         }}
       >
         <a
-          href={`https://suiexplorer.com/txblock/${executeDigest}?network=devnet`}
+          href={`https://suiexplorer.com/txblock/${executeDigest}?network=${import.meta.env.VITE_SUI_NETWORK_NAME}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{

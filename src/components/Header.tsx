@@ -1,12 +1,4 @@
-import {
-  AppBar,
-  Box,
-  Button,
-  Chip,
-  Stack,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { AppBar, Box, Button, Stack, Toolbar, Typography } from "@mui/material";
 import { useState } from "react";
 import SuiLogo from "../assets/sui-logo-color.svg";
 import { useGlobalContext } from "../hooks/useGlobalContext";
@@ -26,18 +18,21 @@ export const Header = () => {
         <Stack direction="row" alignItems="center" spacing={2}>
           <img src={SuiLogo} alt="Sui" width={30} height={30} />
           <Typography variant="h6" component="div" sx={{ fontWeight: "bold" }}>
-            zkLogin Demo
+            zkLogin Demo App
           </Typography>
-          <Chip label="Devnet" color="primary" size="small" />
+          <Typography variant="h6" component="div">
+            🛜 {import.meta.env.VITE_SUI_NETWORK_NAME}
+          </Typography>
         </Stack>
         <Box sx={{ flexGrow: 1 }} />
         <Button
-          variant="text"
+          variant="outlined"
           color="inherit"
           onClick={() => setShowResetDialog(true)}
         >
-          Logout
+          Sign Out
         </Button>
+        {/* ログアウト用のダイアログコンポーネント */}
         <ResetDialog
           open={showResetDialog}
           onClose={() => setShowResetDialog(false)}

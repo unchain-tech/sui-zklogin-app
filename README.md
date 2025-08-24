@@ -1,5 +1,7 @@
 # Sui zkLogin Demo
 
+## 画面イメージ
+
 ![](./docs/0.png)
 
 ## 事前準備
@@ -23,7 +25,9 @@ OAuth クライアントの設定
 VITE_GOOGLE_CLIENT_ID=
 ```
 
-## supabase でデータベースとテーブルを作成する。
+## Supabase でデータベースとテーブルを作成する
+
+**Supabase** でアカウントを作成した後に以下のSQLを実行する。
 
 ```sql
 -- ユーザープロフィールを保存するテーブル
@@ -42,14 +46,6 @@ CREATE TABLE profiles (
 
 -- インデックスの追加（subカラムでの検索性能向上のため）
 CREATE INDEX idx_profiles_sub ON profiles(sub);
-
--- Row Level Security (RLS) の有効化
---ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- RLSポリシー: 認証ユーザーは自身のプロフィール情報のみ操作可能
---CREATE POLICY "Users can manage their own profile" ON profiles
---    FOR ALL USING (auth.uid() = id)
---    WITH CHECK (auth.uid() = id);
 
 -- updated_atカラムの自動更新関数の作成
 CREATE OR REPLACE FUNCTION update_updated_at_column() 
