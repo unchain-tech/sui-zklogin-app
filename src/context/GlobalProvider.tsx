@@ -55,7 +55,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     useState("");
   const [maxEpoch, setMaxEpoch] = useState(0);
   const [randomness, setRandomness] = useState("");
-  const [activeStep, ] = useState(0);
+  const [activeStep] = useState(0);
 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -258,76 +258,78 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * @param userId
    * @returns
    */
-  const saveZkLoginData = useCallback(async (
-    userId: string,
-    userSalt: string,
-    maxEpoch: number,
-  ) => {
-    console.log("zkLoginデータをSupabaseに保存/更新する関数開始")
-    // Supabaseにデータを保存/更新
-    const { error } = await supabase.from("profiles").upsert(
-      {
-        id: crypto.randomUUID(),
-        sub: userId,
-        user_salt: userSalt,
-        max_epoch: maxEpoch,
-      },
-      {
-        onConflict: "sub",
-        ignoreDuplicates: false,
-      },
-    );
+  const saveZkLoginData = useCallback(
+    async (userId: string, userSalt: string, maxEpoch: number) => {
+      console.log("zkLoginデータをSupabaseに保存/更新する関数開始");
+      // Supabaseにデータを保存/更新
+      const { error } = await supabase.from("profiles").upsert(
+        {
+          id: crypto.randomUUID(),
+          sub: userId,
+          user_salt: userSalt,
+          max_epoch: maxEpoch,
+        },
+        {
+          onConflict: "sub",
+          ignoreDuplicates: false,
+        },
+      );
 
-    if (error) {
-      console.error("Failed to save zkLogin data:", error);
-      throw new Error(`Failed to save zkLogin data: ${error.message}`);
-    }
-  }, []);
+      if (error) {
+        console.error("Failed to save zkLogin data:", error);
+        throw new Error(`Failed to save zkLogin data: ${error.message}`);
+      }
+    },
+    [],
+  );
 
   /**
    * zkLoginデータをSupabaseから取得する関数
    * @param userId
    * @returns
    */
-  const fetchZkLoginData = useCallback(async (
-    userId: string,
-  ): Promise<{ user_salt: string; max_epoch: number } | null> => {
-    try {
-      console.log("supabaseへの登録処理開始")
-      // Supabaseからデータを取得
-      // ここではユーザーソルトとmaxEpochを取得する
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("user_salt, max_epoch")
-        .eq("sub", userId)
-        .single();
+  const fetchZkLoginData = useCallback(
+    async (
+      userId: string,
+    ): Promise<{ user_salt: string; max_epoch: number } | null> => {
+      try {
+        console.log("supabaseへの登録処理開始");
+        // Supabaseからデータを取得
+        // ここではユーザーソルトとmaxEpochを取得する
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("user_salt, max_epoch")
+          .eq("sub", userId)
+          .single();
 
-      console.log("Fetched zkLogin data:", data);
+        console.log("Fetched zkLogin data:", data);
 
-      // データを取得できなかった場合は新規に登録する
-      if (!data) {
-        const { epoch } = await suiClient.getLatestSuiSystemState();
-        const newMaxEpoch = Number(epoch) + 10;
-        const newUserSalt = generateRandomness();
-        // supabase側にデータを登録する
-        await saveZkLoginData(userId, newUserSalt, newMaxEpoch);
-        return { user_salt: newUserSalt, max_epoch: newMaxEpoch };
-      }
-
-      if (error) {
-        if (error === "PGRST116") {
-          // データなし
-          return null;
+        // データを取得できなかった場合は新規に登録する
+        if (!data) {
+          const { epoch } = await suiClient.getLatestSuiSystemState();
+          const newMaxEpoch = Number(epoch) + 10;
+          const newUserSalt = generateRandomness();
+          // supabase側にデータを登録する
+          await saveZkLoginData(userId, newUserSalt, newMaxEpoch);
+          return { user_salt: newUserSalt, max_epoch: newMaxEpoch };
         }
-        throw new Error(`Database error: ${error}`);
-      }
 
-      return data;
-    } catch (error) {
-      console.error("Failed to fetch zkLogin data:", error);
-      throw error; 
-    }
-  }, [saveZkLoginData]);
+        if (error) {
+          if (error === "PGRST116") {
+            // データなし
+            return null;
+          }
+          throw new Error(`Database error: ${error}`);
+        }
+
+        return data;
+      } catch (error) {
+        console.error("Failed to fetch zkLogin data:", error);
+        throw error;
+      }
+    },
+    [saveZkLoginData],
+  );
 
   // Location の監視（OAuth パラメータの取得）
   useEffect(() => {
@@ -341,7 +343,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       try {
         // supabaseからユーザーソルトとmaxEpochを取得
         const fetchedData = await fetchZkLoginData(userId);
-  
+
         let currentSalt = "";
         if (fetchedData?.user_salt) {
           // 既存のデータがある場合
@@ -349,13 +351,13 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
           setMaxEpoch(fetchedData.max_epoch);
         } else {
           // 初回ログインまたはデータなしの場合
-  
+
           // ユーザーソルトを新規生成
           currentSalt = generateRandomness();
           // エポック数を取得
           const { epoch } = await suiClient.getLatestSuiSystemState();
           const newMaxEpoch = Number(epoch) + 10;
-  
+
           // supabaseに保存する
           await saveZkLoginData(userId, currentSalt, newMaxEpoch);
           setMaxEpoch(newMaxEpoch);
@@ -369,10 +371,9 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
           variant: "error",
         });
       }
-    }
+    };
 
     if (oauthParams?.id_token) {
-
       // 既存のJWTデコード処理など
       const decodedJwt = jwtDecode(oauthParams.id_token as string);
       setJwtString(oauthParams.id_token as string);
@@ -401,7 +402,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setExtendedEphemeralPublicKey("");
     setMaxEpoch(0);
     setRandomness("");
-    (0);
+    0;
     setFetchingZKProof(false);
     setExecutingTxn(false);
     setExecuteDigest("");
@@ -546,7 +547,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     generateNonceValue,
     generateZkLoginAddress,
     generateExtendedEphemeralPublicKey:
-    generateExtendedEphemeralPublicKeyCallback,
+      generateExtendedEphemeralPublicKeyCallback,
   };
 
   return (
