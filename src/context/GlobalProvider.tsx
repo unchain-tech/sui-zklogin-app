@@ -7,6 +7,7 @@ import {
 } from "@mysten/zklogin";
 import type { Session, User } from "@supabase/supabase-js";
 import axios from "axios";
+import { Buffer } from "buffer";
 import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
 import { enqueueSnackbar } from "notistack";
@@ -65,6 +66,24 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const keypairFromSession = window.sessionStorage.getItem(
+      KEY_PAIR_SESSION_STORAGE_KEY,
+    );
+    if (keypairFromSession) {
+      const secretKey = Buffer.from(keypairFromSession, "base64");
+      const newEphemeralKeyPair = Ed25519Keypair.fromSecretKey(secretKey);
+      setEphemeralKeyPair(newEphemeralKeyPair);
+    }
+
+    const randomnessFromSession = window.sessionStorage.getItem(
+      RANDOMNESS_SESSION_STORAGE_KEY,
+    );
+    if (randomnessFromSession) {
+      setRandomness(randomnessFromSession);
+    }
+  }, []);
 
   // nonce生成: 鍵ペア・maxEpoch・randomnessが揃ったら自動生成
   useEffect(() => {
@@ -296,11 +315,11 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       }
 
       if (error) {
-        if (error.code === "PGRST116") {
+        if (error === "PGRST116") {
           // データなし
           return null;
         }
-        throw new Error(`Database error: ${error.message}`);
+        throw new Error(`Database error: ${error}`);
       }
 
       return data;
