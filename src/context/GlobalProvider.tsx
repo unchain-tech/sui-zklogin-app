@@ -28,7 +28,6 @@ import {
   REDIRECT_URI,
   SUI_PROVER_DEV_ENDPOINT,
 } from "../utils/constant";
-import { decrypt, encrypt } from "../utils/crypto";
 
 // Provider Props の型定義
 interface GlobalProviderProps {
@@ -240,18 +239,61 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * @param userId
    * @returns
    */
-  const fetchZkLoginData = async (
+  const saveZkLoginData = useCallback(async (
     userId: string,
-  ): Promise<{ encryptedUserSalt: string; maxEpoch: number } | null> => {
+    userSalt: string,
+    maxEpoch: number,
+  ) => {
+    console.log("zkLoginデータをSupabaseに保存/更新する関数開始")
+    // Supabaseにデータを保存/更新
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: crypto.randomUUID(),
+        sub: userId,
+        user_salt: userSalt,
+        max_epoch: maxEpoch,
+      },
+      {
+        onConflict: "sub",
+        ignoreDuplicates: false,
+      },
+    );
+
+    if (error) {
+      console.error("Failed to save zkLogin data:", error);
+      throw new Error(`Failed to save zkLogin data: ${error.message}`);
+    }
+  }, []);
+
+  /**
+   * zkLoginデータをSupabaseから取得する関数
+   * @param userId
+   * @returns
+   */
+  const fetchZkLoginData = useCallback(async (
+    userId: string,
+  ): Promise<{ user_salt: string; max_epoch: number } | null> => {
     try {
       console.log("supabaseへの登録処理開始")
       // Supabaseからデータを取得
       // ここではユーザーソルトとmaxEpochを取得する
       const { data, error } = await supabase
-        .from("zk_login_data")
-        .select("encrypted_user_salt, max_epoch")
-        .eq("id", userId)
+        .from("profiles")
+        .select("user_salt, max_epoch")
+        .eq("sub", userId)
         .single();
+
+      console.log("Fetched zkLogin data:", data);
+
+      // データを取得できなかった場合は新規に登録する
+      if (!data) {
+        const { epoch } = await suiClient.getLatestSuiSystemState();
+        const newMaxEpoch = Number(epoch) + 10;
+        const newUserSalt = generateRandomness();
+        // supabase側にデータを登録する
+        await saveZkLoginData(userId, newUserSalt, newMaxEpoch);
+        return { user_salt: newUserSalt, max_epoch: newMaxEpoch };
+      }
 
       if (error) {
         if (error.code === "PGRST116") {
@@ -261,46 +303,12 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      return {
-        encryptedUserSalt: data.encrypted_user_salt,
-        maxEpoch: data.max_epoch,
-      };
+      return data;
     } catch (error) {
       console.error("Failed to fetch zkLogin data:", error);
-      throw error; // エラーを再スローして呼び出し元で処理
+      throw error; 
     }
-  };
-
-  /**
-   * zkLoginデータをSupabaseに保存/更新する関数
-   * @param userId
-   * @param encryptedSalt
-   * @param maxEpoch
-   */
-  const saveZkLoginData = async (
-    userId: string,
-    encryptedSalt: string,
-    maxEpoch: number,
-  ) => {
-    console.log("zkLoginデータをSupabaseに保存/更新する関数開始")
-    // Supabaseからデータを保存/更新
-    const { error } = await supabase.from("zk_login_data").upsert(
-      {
-        id: userId,
-        encrypted_user_salt: encryptedSalt,
-        max_epoch: maxEpoch,
-      },
-      {
-        onConflict: "id",
-        ignoreDuplicates: false,
-      },
-    );
-
-    if (error) {
-      console.error("Failed to save zkLogin data:", error);
-      throw new Error(`Failed to save zkLogin data: ${error.message}`);
-    }
-  };
+  }, [saveZkLoginData]);
 
   // Location の監視（OAuth パラメータの取得）
   useEffect(() => {
@@ -308,80 +316,43 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     setOauthParams(res);
   }, [location]);
 
-  /**
-   * zkLoginデータの初期化（取得または新規作成）関数
-   */
-  const initializeZkLoginData = useCallback(async (userId: string) => {
-    
-    try {
-      // supabaseからユーザーソルトとmaxEpochを取得
-      const fetchedData = await fetchZkLoginData(userId);
-
-      let currentSalt = "";
-      if (fetchedData?.encryptedUserSalt) {
-        // 既存のデータがある場合
-        // 復号処理
-        currentSalt = await decrypt(fetchedData.encryptedUserSalt, userPin);
-        setMaxEpoch(fetchedData.maxEpoch);
-      } else {
-        // 初回ログインまたはデータなしの場合
-
-        // ユーザーソルトを新規生成
-        currentSalt = generateRandomness();
-        // エポック数を取得
-        const { epoch } = await suiClient.getLatestSuiSystemState();
-        const newMaxEpoch = Number(epoch) + 10;
-
-        // 暗号化処理
-        const encryptedNewSalt = await encrypt(currentSalt, userPin);
-        // supabaseに暗号化して保存する
-        await saveZkLoginData(userId, encryptedNewSalt, newMaxEpoch);
-        setMaxEpoch(newMaxEpoch);
-      }
-      setUserSalt(currentSalt);
-    } catch (error) {
-      console.error("Failed to initialize zkLogin data:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      enqueueSnackbar(`Failed to initialize zkLogin data: ${errorMessage}`, {
-        variant: "error",
-      });
-    }
-  }, []);
-
   // JWT トークンの処理
   useEffect(() => {
-    const handleLocalStorageFallback = async () => {
-      // 従来のローカルストレージベースの処理
-      let existingSalt = window.localStorage.getItem("demo_user_salt_key_pair");
-      let existingMaxEpoch = window.localStorage.getItem(
-        "demo_max_epoch_key_pair",
-      );
-
-      if (!existingSalt) {
-        // 初回ログイン: 新しいsaltを生成
-        existingSalt = generateRandomness();
-        window.localStorage.setItem("demo_user_salt_key_pair", existingSalt);
-
-        // 現在のエポックを取得してmaxEpochを設定
-        const { epoch } = await suiClient.getLatestSuiSystemState();
-        const newMaxEpoch = Number(epoch) + 10;
-        existingMaxEpoch = newMaxEpoch.toString();
-        window.localStorage.setItem(
-          "demo_max_epoch_key_pair",
-          existingMaxEpoch,
-        );
-        setMaxEpoch(newMaxEpoch);
-      } else {
-        setMaxEpoch(parseInt(existingMaxEpoch || "0", 10));
+    const initializeZkLoginData = async (userId: string) => {
+      try {
+        // supabaseからユーザーソルトとmaxEpochを取得
+        const fetchedData = await fetchZkLoginData(userId);
+  
+        let currentSalt = "";
+        if (fetchedData?.user_salt) {
+          // 既存のデータがある場合
+          currentSalt = fetchedData.user_salt;
+          setMaxEpoch(fetchedData.max_epoch);
+        } else {
+          // 初回ログインまたはデータなしの場合
+  
+          // ユーザーソルトを新規生成
+          currentSalt = generateRandomness();
+          // エポック数を取得
+          const { epoch } = await suiClient.getLatestSuiSystemState();
+          const newMaxEpoch = Number(epoch) + 10;
+  
+          // supabaseに保存する
+          await saveZkLoginData(userId, currentSalt, newMaxEpoch);
+          setMaxEpoch(newMaxEpoch);
+        }
+        setUserSalt(currentSalt);
+      } catch (error) {
+        console.error("Failed to initialize zkLogin data:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        enqueueSnackbar(`Failed to initialize zkLogin data: ${errorMessage}`, {
+          variant: "error",
+        });
       }
-
-      setUserSalt(existingSalt);
-      console.log("Set userSalt from localStorage:", existingSalt);
-    };
+    }
 
     if (oauthParams?.id_token) {
-      handleLocalStorageFallback();
 
       // 既存のJWTデコード処理など
       const decodedJwt = jwtDecode(oauthParams.id_token as string);
@@ -391,10 +362,11 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
       console.log("Decoded JWT:", decodedJwt);
 
       // supabaseへ認証情報を保管する
-      // initializeZkLoginData(decodedJwt.jti as string);
-      
+      if (decodedJwt.sub) {
+        initializeZkLoginData(decodedJwt.sub);
+      }
     }
-  }, [oauthParams]);
+  }, [oauthParams, fetchZkLoginData, saveZkLoginData]);
 
   // Methods
   const resetState = () => {
@@ -556,7 +528,6 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     generateZkLoginAddress,
     generateExtendedEphemeralPublicKey:
     generateExtendedEphemeralPublicKeyCallback,
-    initializeZkLoginData,
   };
 
   return (

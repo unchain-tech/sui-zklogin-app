@@ -28,8 +28,8 @@ VITE_GOOGLE_CLIENT_ID=
 ```sql
 -- ユーザープロフィールを保存するテーブル
 CREATE TABLE profiles (
-  -- auth.usersテーブルのidと連携し、主キーとする
-  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- ランダムに生成されたUUIDをキーとする
+  id uuid PRIMARY KEY,
   -- Googleから取得するsub ID（重複を許可しない）
   sub text UNIQUE NOT NULL,
   name text,
@@ -44,12 +44,12 @@ CREATE TABLE profiles (
 CREATE INDEX idx_profiles_sub ON profiles(sub);
 
 -- Row Level Security (RLS) の有効化
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+--ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- RLSポリシー: 認証ユーザーは自身のプロフィール情報のみ操作可能
-CREATE POLICY "Users can manage their own profile" ON profiles
-    FOR ALL USING (auth.uid() = id)
-    WITH CHECK (auth.uid() = id);
+--CREATE POLICY "Users can manage their own profile" ON profiles
+--    FOR ALL USING (auth.uid() = id)
+--    WITH CHECK (auth.uid() = id);
 
 -- updated_atカラムの自動更新関数の作成
 CREATE OR REPLACE FUNCTION update_updated_at_column() 

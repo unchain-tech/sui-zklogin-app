@@ -64,7 +64,6 @@ export interface GlobalContextType {
   generateNonceValue: () => void;
   generateZkLoginAddress: () => void;
   generateExtendedEphemeralPublicKey: () => void;
-  initializeZkLoginData: (value: string) => Promise<void>;
 }
 
 // Context の作成
