@@ -9,7 +9,7 @@ import { ResetDialog } from "./../components/ResetDialog";
  * @returns
  */
 export const Header = () => {
-  const { signOut } = useGlobalContext();
+  const { zkLoginUserAddress, signOut } = useGlobalContext();
   const [showResetDialog, setShowResetDialog] = useState(false);
 
   return (
@@ -25,13 +25,15 @@ export const Header = () => {
           </Typography>
         </Stack>
         <Box sx={{ flexGrow: 1 }} />
-        <Button
-          variant="outlined"
-          color="inherit"
-          onClick={() => setShowResetDialog(true)}
-        >
-          Sign Out
-        </Button>
+        {zkLoginUserAddress && (
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() => setShowResetDialog(true)}
+          >
+            Sign Out
+          </Button>
+        )}
         {/* ログアウト用のダイアログコンポーネント */}
         <ResetDialog
           open={showResetDialog}
