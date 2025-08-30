@@ -1,7 +1,5 @@
 # Sui zkLogin Demo App
 
-**zkLogin** を学ぶための検証用リポジトリです。
-
 ## 画面イメージ
 
 ![](./docs/0.png)
