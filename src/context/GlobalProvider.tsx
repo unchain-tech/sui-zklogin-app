@@ -71,44 +71,28 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * 一時的な鍵ペアを生成するメソッド
    */
   const generateEphemeralKeyPair = () => {
-    const newEphemeralKeyPair = Ed25519Keypair.generate();
-    // リダイレクト後にも保持するためにセッションストレージに保管
-    window.sessionStorage.setItem(
-      KEY_PAIR_SESSION_STORAGE_KEY,
-      newEphemeralKeyPair.export().privateKey,
-    );
-    setEphemeralKeyPair(newEphemeralKeyPair);
+   
   };
 
   /**
    * 一時的な鍵ペアをクリアするメソッド
    */
   const clearEphemeralKeyPair = () => {
-    window.sessionStorage.removeItem(KEY_PAIR_SESSION_STORAGE_KEY);
-    setEphemeralKeyPair(undefined);
+    
   };
 
   /**
    * 現在のエポックを取得するメソッド
    */
   const fetchCurrentEpoch = async () => {
-    // Sui ClientのgetLatestSuiSystemStateメソッドを呼び出す
-    const { epoch } = await suiClient.getLatestSuiSystemState();
-    setCurrentEpoch(epoch);
-    setMaxEpoch(Number(epoch) + 10);
+    
   };
 
   /**
    * ランダムネス値を生成するメソッド
    */
   const generateRandomnessValue = () => {
-    const newRandomness = generateRandomness();
-    // リダイレクト後にも保持するためにセッションストレージに保管
-    window.sessionStorage.setItem(
-      RANDOMNESS_SESSION_STORAGE_KEY,
-      newRandomness,
-    );
-    setRandomness(newRandomness);
+   
   };
 
   /**
@@ -116,76 +100,26 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * @returns
    */
   const generateNonceValue = () => {
-    if (!ephemeralKeyPair) return;
-    const newNonce = generateNonce(
-      ephemeralKeyPair.getPublicKey(),
-      maxEpoch,
-      randomness,
-    );
-    setNonce(newNonce);
+   
   };
 
   useEffect(() => {
-    // セッションストレージから一時鍵ペアのデータを取得
-    const keypairFromSession = window.sessionStorage.getItem(
-      KEY_PAIR_SESSION_STORAGE_KEY,
-    );
-    if (keypairFromSession) {
-      const secretKey = Buffer.from(keypairFromSession, "base64");
-      const newEphemeralKeyPair = Ed25519Keypair.fromSecretKey(secretKey);
-      setEphemeralKeyPair(newEphemeralKeyPair);
-    }
-
-    // セッションストレージからランダムネスの値を取得する
-    const randomnessFromSession = window.sessionStorage.getItem(
-      RANDOMNESS_SESSION_STORAGE_KEY,
-    );
-    if (randomnessFromSession) {
-      setRandomness(randomnessFromSession);
-    }
+   
   }, []);
 
   // nonce生成: 鍵ペア・maxEpoch・randomnessが揃ったら自動生成
   useEffect(() => {
-    const hasIdToken = window.location.hash.includes("id_token=");
-    if (!hasIdToken && ephemeralKeyPair && maxEpoch && randomness) {
-      // ナンスを生成する
-      const newNonce = generateNonce(
-        ephemeralKeyPair.getPublicKey(),
-        maxEpoch,
-        randomness,
-      );
-      setNonce(newNonce);
-    }
+   
   }, [ephemeralKeyPair, maxEpoch, randomness]);
 
   // Google OAuthリダイレクト: nonceが生成されたら自動実行
   useEffect(() => {
-    // id_tokenパラメータが含まれているか確認nする。
-    const hasIdToken = window.location.hash.includes("id_token=");
-    // 含まれていない場合は / にリダイレクトする
-    if (!hasIdToken && nonce && window.location.pathname === "/") {
-      const params = new URLSearchParams({
-        client_id: CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        response_type: "id_token",
-        scope: "openid",
-        nonce: nonce,
-      });
-      // ログインURLを生成してリダイレクトする
-      const loginURL = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-      // 新しいウィンドウでOAuthプロバイダー側の認証処理を行う。
-      window.location.replace(loginURL);
-    }
+    
   }, [nonce]);
 
   // ZKLoginアドレス生成: jwtStringとuserSaltが揃ったら自動生成
   useEffect(() => {
-    if (jwtString && userSalt) {
-      // JWTとユーザーソルトを使ってZKLogin 用のウォレットアドレスを生成
-      const zkLoginAddress = jwtToAddress(jwtString, userSalt);
-      setZkLoginUserAddress(zkLoginAddress);
-    }
+   
   }, [jwtString, userSalt]);
 
   /**
@@ -218,42 +152,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * 必要な情報が揃ったらfetchZkProofを呼び出す
    */
   const fetchZkProofCallback = useCallback(async () => {
-    if (
-      jwtString &&
-      userSalt &&
-      maxEpoch &&
-      ephemeralKeyPair &&
-      extendedEphemeralPublicKey &&
-      randomness
-    ) {
-      setFetchingZKProof(true);
-
-      try {
-        // ZK Prover APIにリクエストを送信してZKProofを生成する
-        const zkProofResult = await axios.post(
-          SUI_PROVER_DEV_ENDPOINT,
-          {
-            // JWT、拡張公開鍵、エポック数、ランダムネス、ユーザーソルトを詰めてAPIを呼び出す
-            jwt: oauthParams?.id_token as string,
-            extendedEphemeralPublicKey,
-            maxEpoch,
-            jwtRandomness: randomness,
-            salt: userSalt,
-            keyClaimName: "sub",
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        setZkProof(zkProofResult.data as PartialZkLoginSignature);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setFetchingZKProof(false);
-      }
-    }
+    
   }, [
     jwtString,
     userSalt,
@@ -320,25 +219,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    */
   const saveZkLoginData = useCallback(
     async (userId: string, userSalt: string, maxEpoch: number) => {
-      console.log("zkLoginデータをSupabaseに保存/更新する関数開始");
-      // Supabaseにデータを保存/更新
-      const { error } = await supabase.from("profiles").upsert(
-        {
-          id: crypto.randomUUID(),
-          sub: userId,
-          user_salt: userSalt,
-          max_epoch: maxEpoch,
-        },
-        {
-          onConflict: "sub",
-          ignoreDuplicates: false,
-        },
-      );
-
-      if (error) {
-        console.error("Failed to save zkLogin data:", error);
-        throw new Error(`Failed to save zkLogin data: ${error.message}`);
-      }
+      
     },
     [],
   );
@@ -352,41 +233,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
     async (
       userId: string,
     ): Promise<{ user_salt: string; max_epoch: number } | null> => {
-      try {
-        console.log("supabaseへの登録処理開始");
-        // Supabaseからデータを取得
-        // ここではユーザーソルトとmaxEpochを取得する
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("user_salt, max_epoch")
-          .eq("sub", userId)
-          .single();
-
-        console.log("Fetched zkLogin data:", data);
-
-        // データを取得できなかった場合は新規に登録する
-        if (!data) {
-          const { epoch } = await suiClient.getLatestSuiSystemState();
-          const newMaxEpoch = Number(epoch) + 10;
-          const newUserSalt = generateRandomness();
-          // supabase側にデータを登録する
-          await saveZkLoginData(userId, newUserSalt, newMaxEpoch);
-          return { user_salt: newUserSalt, max_epoch: newMaxEpoch };
-        }
-
-        if (error) {
-          if (error === "PGRST116") {
-            // データなし
-            return null;
-          }
-          throw new Error(`Database error: ${error}`);
-        }
-
-        return data;
-      } catch (error) {
-        console.error("Failed to fetch zkLogin data:", error);
-        throw error;
-      }
+      
     },
     [saveZkLoginData],
   );
@@ -404,50 +251,7 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
      * @param userId
      */
     const initializeZkLoginData = async (userId: string) => {
-      try {
-        // supabaseからユーザーソルトとmaxEpochを取得
-        const fetchedData = await fetchZkLoginData(userId);
-
-        let currentSalt = "";
-        if (fetchedData?.user_salt) {
-          // 既存のデータがある場合
-          currentSalt = fetchedData.user_salt;
-          setMaxEpoch(fetchedData.max_epoch);
-        } else {
-          // ユーザーソルトを新規生成
-          currentSalt = generateRandomness();
-          // エポック数を取得
-          const { epoch } = await suiClient.getLatestSuiSystemState();
-          const newMaxEpoch = Number(epoch) + 10;
-
-          // supabaseに保存する
-          await saveZkLoginData(userId, currentSalt, newMaxEpoch);
-          setMaxEpoch(newMaxEpoch);
-        }
-        setUserSalt(currentSalt);
-      } catch (error) {
-        console.error("Failed to initialize zkLogin data:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        enqueueSnackbar(`Failed to initialize zkLogin data: ${errorMessage}`, {
-          variant: "error",
-        });
-      }
-    };
-
-    if (oauthParams?.id_token) {
-      // 既存のJWTデコード処理など
-      const decodedJwt = jwtDecode(oauthParams.id_token as string);
-      setJwtString(oauthParams.id_token as string);
-      setDecodedJwt(decodedJwt);
-
-      console.log("Decoded JWT:", decodedJwt);
-
-      // supabaseへ認証情報を保管する
-      if (decodedJwt.sub) {
-        // initializeZkLoginDataメソッドを呼び出す(zkLoginの認証処理に必要なデータを取得/保存する - Supabaseと連携)。
-        initializeZkLoginData(decodedJwt.sub);
-      }
+      
     }
   }, [oauthParams, fetchZkLoginData, saveZkLoginData]);
 
@@ -489,68 +293,19 @@ export function GlobalProvider({ children }: GlobalProviderProps) {
    * @returns
    */
   const generateZkLoginAddress = () => {
-    if (!userSalt || !jwtString) return;
-
-    // JWTからウォレットアドレスを生成
-    const zkLoginAddress = jwtToAddress(jwtString, userSalt);
-    console.log("ZKLoginAddress:", zkLoginAddress);
-    setZkLoginUserAddress(zkLoginAddress);
+    
   };
 
   // GlobalContextProviderから提供する変数・メソッド一覧を定義
   const contextValue: GlobalContextType = {
     // State
-    currentEpoch,
-    nonce,
-    oauthParams,
-    zkLoginUserAddress,
-    decodedJwt,
-    jwtString,
-    ephemeralKeyPair,
-    userSalt,
-    zkProof,
-    extendedEphemeralPublicKey,
-    maxEpoch,
-    randomness,
-    activeStep,
-    fetchingZKProof,
-    executingTxn,
-    executeDigest,
-    user,
-    session,
-    loading,
+    
 
     // State setters
-    setCurrentEpoch,
-    setNonce,
-    setOauthParams,
-    setZkLoginUserAddress,
-    setDecodedJwt,
-    setJwtString,
-    setEphemeralKeyPair,
-    setUserSalt,
-    setZkProof,
-    setExtendedEphemeralPublicKey,
-    setMaxEpoch,
-    setRandomness,
-    setFetchingZKProof,
-    setExecutingTxn,
-    setExecuteDigest,
-    setUser,
-    setSession,
-    setLoading,
+    
 
     // Methods
-    resetState,
-    signOut,
-    generateEphemeralKeyPair,
-    clearEphemeralKeyPair,
-    fetchCurrentEpoch,
-    generateRandomnessValue,
-    generateNonceValue,
-    generateZkLoginAddress,
-    generateExtendedEphemeralPublicKey:
-      generateExtendedEphemeralPublicKeyCallback,
+    
   };
 
   return (
