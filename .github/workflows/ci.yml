@@ -1,8 +1,11 @@
-name: Build and Deploy
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [complete]
+  pull_request:
+    branches: [complete]
+
 
 permissions:
   contents: write
