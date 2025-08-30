@@ -14,6 +14,26 @@
 cp .env.example .env.local
 ```
 
+セットアップが必要な環境変数は以下の通り
+
+```txt
+# Google OAuth Configuration(これはダミー値)
+VITE_GOOGLE_CLIENT_ID=
+
+# Sui Configuration  
+VITE_SUI_NETWORK_NAME="devnet"
+VITE_SUI_FULLNODE_URL=https://fullnode.devnet.sui.io
+VITE_SUI_DEVNET_FAUCET=https://faucet.devnet.sui.io
+VITE_SUI_PROVER_DEV_ENDPOINT=https://prover-dev.mystenlabs.com/v1
+
+# Application Configuration
+VITE_REDIRECT_URI=http://localhost:5173/
+
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+
+```
+
 ### Google Cloud で OAuth 用のクライアント ID を発行すること
 
 **Google Cloud** で OAuth 用のクライアント ID を発行して環境変数にセットすること。
