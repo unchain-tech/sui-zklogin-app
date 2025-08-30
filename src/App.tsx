@@ -1,6 +1,4 @@
 import { Box, Container, Grid, Stack } from "@mui/material";
-import AccountInformationCard from "./components/AccountInformationCard";
-import ActionsCard from "./components/ActionsCard";
 import { Header } from "./components/Header";
 import { TransactionSuccessAlert } from "./components/TransactionSuccessAlert";
 import "./style/App.css";
@@ -17,8 +15,8 @@ function App() {
         <Grid container justifyContent="center">
           <Grid item xs={12} md={8} lg={6}>
             <Stack spacing={4}>
-              <AccountInformationCard />
-              <ActionsCard />
+              {/* ここに AccountInformationCard コンポーネントを追加する */}
+              {/* ここに ActionsCard コンポーネントを追加する */}
             </Stack>
           </Grid>
         </Grid>
